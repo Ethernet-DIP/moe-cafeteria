@@ -31,8 +31,8 @@ export default function CafeteriaScanner({ mealTypeId }: CafeteriaScannerProps) 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
-    successAudioRef.current = new Audio("/success.mp3")
-    errorAudioRef.current = new Audio("/error.mp3")
+    // successAudioRef.current = new Audio("/success.mp3")
+    // errorAudioRef.current = new Audio("/error.mp3")
 
     // Always keep input focused
     const focusInput = () => {
@@ -142,15 +142,15 @@ export default function CafeteriaScanner({ mealTypeId }: CafeteriaScannerProps) 
 
       if (alreadyUsed) {
         setError(`${emp.name} has already used their ${mealType.name} allowance today.`)
-        errorAudioRef.current?.play()
+        // errorAudioRef.current?.play()
       } else {
         await recordMeal(emp.cardId, mealTypeId)
         setSuccess(true)
-        successAudioRef.current?.play()
+        // successAudioRef.current?.play()
       }
     } catch (err) {
       setError("Employee not found with this card or code.")
-      errorAudioRef.current?.play()
+      // errorAudioRef.current?.play()
     } finally {
       setProcessing(false)
       setInputValue("")
