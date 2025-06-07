@@ -9,15 +9,16 @@ import type { MealType } from "@/lib/types"
 
 export default function ScanPage({ params }: { params: { mealType: string } }) {
   // Validate meal type
-  const validMealTypes: MealType[] = ["breakfast", "lunch", "dinner"]
-  if (!validMealTypes.includes(params.mealType as MealType)) {
+  const validMealTypes = ["breakfast", "lunch", "dinner"]
+  if (!validMealTypes.includes(params.mealType)) {
     notFound()
   }
+  console.log(params.mealType)
 
-  const mealType = params.mealType as MealType
+  const mealTypeChanged = params.mealType
 
   // Format meal type for display
-  const formattedMealType = mealType.charAt(0).toUpperCase() + mealType.slice(1)
+  const formattedMealType = mealTypeChanged.charAt(0).toUpperCase() + mealTypeChanged.slice(1)
 
   return (
     <main className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -37,7 +38,7 @@ export default function ScanPage({ params }: { params: { mealType: string } }) {
         </div>
 
         <Suspense fallback={<div className="text-center">Loading scanner...</div>}>
-          <CafeteriaScanner mealType={mealType} />
+          <CafeteriaScanner mealTypeId={mealTypeChanged} />
         </Suspense>
       </div>
       <Toaster />
