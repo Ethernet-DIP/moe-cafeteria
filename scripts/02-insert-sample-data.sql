@@ -3,9 +3,9 @@
 -- Insert sample users (passwords are hashed versions of the demo passwords)
 -- Note: In production, use proper password hashing like bcrypt
 INSERT INTO users (id, username, email, password_hash, full_name, role, is_active, last_login) VALUES
-(uuid_generate_v4(), 'admin', 'admin@ministry.gov.et', '$2b$10$rQZ8kHp0rQZ8kHp0rQZ8kOeKqGqGqGqGqGqGqGqGqGqGqGqGqGqGqG', 'አድሚን ተስፋዬ', 'admin', true, CURRENT_TIMESTAMP),
-(uuid_generate_v4(), 'manager', 'manager@ministry.gov.et', '$2b$10$mQZ8kHp0rQZ8kHp0rQZ8kOeKqGqGqGqGqGqGqGqGqGqGqGqGqGqGqG', 'ማናጀር አበበ', 'manager', true, CURRENT_TIMESTAMP - INTERVAL '2 hours'),
-(uuid_generate_v4(), 'operator', 'operator@ministry.gov.et', '$2b$10$oQZ8kHp0rQZ8kHp0rQZ8kOeKqGqGqGqGqGqGqGqGqGqGqGqGqGqGqG', 'ኦፐሬተር ሰላም', 'operator', true, CURRENT_TIMESTAMP - INTERVAL '1 day');
+(uuid_generate_v4(), 'admin', 'admin@ethernet.edu.et', '$2b$10$rQZ8kHp0rQZ8kHp0rQZ8kOeKqGqGqGqGqGqGqGqGqGqGqGqGqGqGqG', 'አድሚን ተስፋዬ', 'admin', true, CURRENT_TIMESTAMP),
+(uuid_generate_v4(), 'manager', 'manager@ethernet.edu.et', '$2b$10$mQZ8kHp0rQZ8kHp0rQZ8kOeKqGqGqGqGqGqGqGqGqGqGqGqGqGqGqG', 'ማናጀር አበበ', 'manager', true, CURRENT_TIMESTAMP - INTERVAL '2 hours'),
+(uuid_generate_v4(), 'operator', 'operator@ethernet.edu.et', '$2b$10$oQZ8kHp0rQZ8kHp0rQZ8kOeKqGqGqGqGqGqGqGqGqGqGqGqGqGqGqG', 'ኦፐሬተር ሰላም', 'operator', true, CURRENT_TIMESTAMP - INTERVAL '1 day');
 
 -- Insert sample meal types
 INSERT INTO meal_types (id, name, price, icon, enabled, color) VALUES
