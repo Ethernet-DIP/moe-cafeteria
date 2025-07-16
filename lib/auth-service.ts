@@ -1,5 +1,6 @@
 "use client"
 
+import {remoteAxiosInstance} from "./axiosInstance";
 import type { User, LoginCredentials } from "./types"
 
 // Demo users - in a real app, this would come from a database
@@ -39,9 +40,11 @@ const DEMO_USERS: (User & { password: string })[] = [
 ]
 
 // Get all users
-const getUsers = (): (User & { password: string })[] => {
-  const storedUsers = localStorage.getItem("users")
-  return storedUsers ? JSON.parse(storedUsers) : DEMO_USERS
+const getUsers = async(): Promise<(User&{password: string;})[]> => {
+    return remoteAxiosInstance.get("/users").then(response =>response.data).catch(err=> console.log(err));
+  
+  // const storedUsers = localStorage.getItem("users")
+  // return storedUsers ? JSON.parse(storedUsers) : DEMO_USERS
 }
 
 // Save users
@@ -60,7 +63,7 @@ export const login = async (credentials: LoginCredentials): Promise<User> => {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 1000))
 
-  const users = getUsers()
+  const users = await getUsers()
   const user = users.find(
     (u) => u.username === credentials.username && u.password === credentials.password && u.isActive,
   )
@@ -114,7 +117,7 @@ export const getAllUsers = async (): Promise<User[]> => {
     throw new Error("Unauthorized")
   }
 
-  const users = getUsers()
+  const users = await getUsers()
   return users.map(({ password, ...user }) => user)
 }
 
@@ -127,7 +130,7 @@ export const createUser = async (userData: Omit<User, "id" | "createdAt"> & { pa
     throw new Error("Unauthorized")
   }
 
-  const users = getUsers()
+  const users = await getUsers()
 
   // Check if username already exists
   if (users.some((u) => u.username === userData.username)) {
@@ -149,6 +152,7 @@ export const createUser = async (userData: Omit<User, "id" | "createdAt"> & { pa
   saveUsers(users)
 
   const { password, ...userResponse } = newUser
+  // remoteAxiosInstance.post("/users", newUser)
   return userResponse
 }
 
@@ -161,7 +165,7 @@ export const updateUser = async (id: string, updates: Partial<User & { password?
     throw new Error("Unauthorized")
   }
 
-  const users = getUsers()
+  const users = await getUsers()
   const userIndex = users.findIndex((u) => u.id === id)
 
   if (userIndex === -1) {
@@ -195,9 +199,10 @@ export const deleteUser = async (id: string): Promise<void> => {
     throw new Error("Unauthorized")
   }
 
-  const users = getUsers()
+  const users = await getUsers()
   const filteredUsers = users.filter((u) => u.id !== id)
 
+  await remoteAxiosInstance.delete(`/users/${id}`);
   if (filteredUsers.length === users.length) {
     throw new Error("User not found")
   }
@@ -214,7 +219,7 @@ export const toggleUserStatus = async (id: string): Promise<User> => {
     throw new Error("Unauthorized")
   }
 
-  const users = getUsers()
+  const users = await getUsers()
   const userIndex = users.findIndex((u) => u.id === id)
 
   if (userIndex === -1) {

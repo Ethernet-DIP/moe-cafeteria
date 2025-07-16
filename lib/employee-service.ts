@@ -2,6 +2,7 @@
 
 import type { Employee, MealRecord, EmployeeUsageStats } from "./types"
 import { getMealTypeById } from "./meal-service"
+import {remoteAxiosInstance} from "./axiosInstance"
 
 // Demo data - in a real app, this would come from a database
 const DEMO_EMPLOYEES: Employee[] = [
@@ -38,9 +39,10 @@ const DEMO_EMPLOYEES: Employee[] = [
 ]
 
 // Get employees from localStorage or use demo data
-const getEmployees = (): Employee[] => {
-  const storedEmployees = localStorage.getItem("employees")
-  return storedEmployees ? JSON.parse(storedEmployees) : DEMO_EMPLOYEES
+const getEmployees = (): Promise<Employee[]> => {
+  return remoteAxiosInstance.get("/employees").then(response =>response.data).catch(err=> console.log(err));
+  // const storedEmployees = localStorage.getItem("employees")
+  // return storedEmployees ? JSON.parse(storedEmployees) : DEMO_EMPLOYEES
 }
 
 // Save employees to localStorage
@@ -63,7 +65,7 @@ export const getEmployeeByCardId = async (input: string): Promise<Employee> => {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 500))
 
-  const employees = getEmployees()
+  const employees = await getEmployees()
   const employee = employees.find((emp) => emp.isActive && (emp.cardId === input || emp.shortCode === input))
 
   if (!employee) {
@@ -175,7 +177,7 @@ export const toggleEmployeeStatus = async (employeeId: string): Promise<Employee
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 500))
 
-  const employees = getEmployees()
+  const employees = await getEmployees()
   const employeeIndex = employees.findIndex((emp) => emp.id === employeeId)
 
   if (employeeIndex === -1) {
@@ -197,7 +199,7 @@ export const assignCardToEmployee = async (
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 500))
 
-  const employees = getEmployees()
+  const employees = await getEmployees()
   const employeeIndex = employees.findIndex((emp) => emp.id === employeeId)
 
   if (employeeIndex === -1) {
@@ -229,7 +231,7 @@ export const getEmployeeById = async (employeeId: string): Promise<Employee> => 
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 300))
 
-  const employees = getEmployees()
+  const employees =  await getEmployees()
   const employee = employees.find((emp) => emp.id === employeeId)
 
   if (!employee) {

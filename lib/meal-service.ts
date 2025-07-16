@@ -1,5 +1,6 @@
 "use client"
 
+import {remoteAxiosInstance} from "./axiosInstance";
 import type { MealType } from "./types"
 
 // Default meal types
@@ -33,10 +34,12 @@ const DEFAULT_MEAL_TYPES: MealType[] = [
 // Get all meal types
 export const getMealTypes = async (): Promise<MealType[]> => {
   // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 300))
+  return remoteAxiosInstance.get("/meals/types").then(response =>response.data).catch(err=> console.log(err));
 
-  const storedMealTypes = localStorage.getItem("mealTypes")
-  return storedMealTypes ? JSON.parse(storedMealTypes) : DEFAULT_MEAL_TYPES
+  // await new Promise((resolve) => setTimeout(resolve, 300))
+
+  // const storedMealTypes = localStorage.getItem("mealTypes")
+  // return storedMealTypes ? JSON.parse(storedMealTypes) : DEFAULT_MEAL_TYPES
 }
 
 // Get enabled meal types
