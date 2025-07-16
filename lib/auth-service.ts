@@ -41,10 +41,10 @@ const DEMO_USERS: (User & { password: string })[] = [
 
 // Get all users
 const getUsers = async(): Promise<(User&{password: string;})[]> => {
-    return remoteAxiosInstance.get("/users").then(response =>response.data).catch(err=> console.log(err));
+    // return remoteAxiosInstance.get("/users").then(response =>response.data).catch(err=> console.log(err));
   
-  // const storedUsers = localStorage.getItem("users")
-  // return storedUsers ? JSON.parse(storedUsers) : DEMO_USERS
+  const storedUsers = localStorage.getItem("users")
+  return storedUsers ? JSON.parse(storedUsers) : DEMO_USERS
 }
 
 // Save users

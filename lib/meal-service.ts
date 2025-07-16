@@ -34,12 +34,12 @@ const DEFAULT_MEAL_TYPES: MealType[] = [
 // Get all meal types
 export const getMealTypes = async (): Promise<MealType[]> => {
   // Simulate API delay
-  return remoteAxiosInstance.get("/meals/types").then(response =>response.data).catch(err=> console.log(err));
+  // return remoteAxiosInstance.get("/meals/types").then(response =>response.data).catch(err=> console.log(err));
 
-  // await new Promise((resolve) => setTimeout(resolve, 300))
+  await new Promise((resolve) => setTimeout(resolve, 300))
 
-  // const storedMealTypes = localStorage.getItem("mealTypes")
-  // return storedMealTypes ? JSON.parse(storedMealTypes) : DEFAULT_MEAL_TYPES
+  const storedMealTypes = localStorage.getItem("mealTypes")
+  return storedMealTypes ? JSON.parse(storedMealTypes) : Promise.all(DEFAULT_MEAL_TYPES)
 }
 
 // Get enabled meal types

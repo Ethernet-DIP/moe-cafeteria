@@ -40,9 +40,9 @@ const DEMO_EMPLOYEES: Employee[] = [
 
 // Get employees from localStorage or use demo data
 const getEmployees = (): Promise<Employee[]> => {
-  return remoteAxiosInstance.get("/employees").then(response =>response.data).catch(err=> console.log(err));
-  // const storedEmployees = localStorage.getItem("employees")
-  // return storedEmployees ? JSON.parse(storedEmployees) : DEMO_EMPLOYEES
+  // return remoteAxiosInstance.get("/employees").then(response =>response.data).catch(err=> console.log(err));
+  const storedEmployees = localStorage.getItem("employees")
+  return storedEmployees ? JSON.parse(storedEmployees) : Promise.all(DEMO_EMPLOYEES)
 }
 
 // Save employees to localStorage
