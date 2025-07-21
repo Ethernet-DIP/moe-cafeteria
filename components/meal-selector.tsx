@@ -38,7 +38,7 @@ export default function MealSelector() {
   }, [])
 
   const handleMealSelection = (mealCategoryId: string) => {
-    router.push(`/scan/category/${mealCategoryId}`)
+    router.push(`/scan/${mealCategoryId}`)
   }
 
   const getMealIcon = (iconName: string) => {

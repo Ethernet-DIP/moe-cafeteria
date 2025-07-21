@@ -167,7 +167,7 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
         setPricing(null)
         setError(null)
         setSuccess(false)
-      }, 3000)
+      }, 10000)
     }
   }
 
