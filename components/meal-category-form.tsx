@@ -150,7 +150,7 @@ export default function MealCategoryForm({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="fasting">ጾም (Fasting)</SelectItem>
-                <SelectItem value="non_fasting">የጾም (Non-Fasting)</SelectItem>
+                <SelectItem value="non_fasting">የፍስግ (Non-Fasting)</SelectItem>
               </SelectContent>
             </Select>
           </div>

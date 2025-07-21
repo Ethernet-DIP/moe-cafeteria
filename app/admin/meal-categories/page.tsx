@@ -122,7 +122,7 @@ export default function MealCategoriesPage() {
       </Badge>
     ) : (
       <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-        የጾም
+        የፍስግ
       </Badge>
     )
   }

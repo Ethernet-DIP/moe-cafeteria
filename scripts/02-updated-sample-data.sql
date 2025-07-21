@@ -17,19 +17,19 @@ INSERT INTO meal_types (id, name, icon, enabled, color) VALUES
 INSERT INTO meal_categories (meal_type_id, category, name, normal_price, supported_price, enabled) VALUES
 -- Breakfast categories
 ('breakfast', 'fasting', 'ቁርስ - ጾም', 30.00, 20.00, true),
-('breakfast', 'non_fasting', 'ቁርስ - የጾም', 40.00, 30.00, true),
+('breakfast', 'non_fasting', 'ቁርስ - የፍስግ', 40.00, 30.00, true),
 
 -- Lunch categories  
 ('lunch', 'fasting', 'ምሳ - ጾም', 50.00, 40.00, true),
-('lunch', 'non_fasting', 'ምሳ - የጾም', 60.00, 50.00, true),
+('lunch', 'non_fasting', 'ምሳ - የፍስግ', 60.00, 50.00, true),
 
 -- Dinner categories
 ('dinner', 'fasting', 'እራት - ጾም', 45.00, 35.00, true),
-('dinner', 'non_fasting', 'እራት - የጾም', 55.00, 45.00, true),
+('dinner', 'non_fasting', 'እራት - የፍስግ', 55.00, 45.00, true),
 
 -- Snack categories
 ('snack', 'fasting', 'መክሰስ - ጾም', 25.00, 20.00, true),
-('snack', 'non_fasting', 'መክሰስ - የጾም', 35.00, 25.00, true);
+('snack', 'non_fasting', 'መክሰስ - የፍስግ', 35.00, 25.00, true);
 
 -- Insert sample employees with salary information
 INSERT INTO employees (id, employee_id, card_id, short_code, name, department, salary, photo_url, is_active) VALUES
@@ -69,38 +69,38 @@ BEGIN
     INSERT INTO meal_records (employee_id, card_id, meal_type_id, meal_category_id, meal_name, category, price_type, normal_price, supported_price, actual_price, support_amount, employee_salary, recorded_at) VALUES
     -- Supported employees (salary < 5000) - they get supported pricing
     ('EMP001', '04A2B3C4D5', 'breakfast', breakfast_fasting_id, 'ቁርስ - ጾም', 'fasting', 'supported', 30.00, 20.00, 20.00, 10.00, 4500.00, CURRENT_TIMESTAMP - INTERVAL '2 hours'),
-    ('EMP002', '15F6E7D8C9', 'breakfast', breakfast_non_fasting_id, 'ቁርስ - የጾም', 'non_fasting', 'supported', 40.00, 30.00, 30.00, 10.00, 3800.00, CURRENT_TIMESTAMP - INTERVAL '2 hours'),
+    ('EMP002', '15F6E7D8C9', 'breakfast', breakfast_non_fasting_id, 'ቁርስ - የፍስግ', 'non_fasting', 'supported', 40.00, 30.00, 30.00, 10.00, 3800.00, CURRENT_TIMESTAMP - INTERVAL '2 hours'),
     ('EMP004', '37B8C9D0E1', 'lunch', lunch_fasting_id, 'ምሳ - ጾም', 'fasting', 'supported', 50.00, 40.00, 40.00, 10.00, 4800.00, CURRENT_TIMESTAMP - INTERVAL '30 minutes'),
-    ('EMP005', '48C9D0E1F2', 'lunch', lunch_non_fasting_id, 'ምሳ - የጾም', 'non_fasting', 'supported', 60.00, 50.00, 50.00, 10.00, 4600.00, CURRENT_TIMESTAMP - INTERVAL '25 minutes'),
+    ('EMP005', '48C9D0E1F2', 'lunch', lunch_non_fasting_id, 'ምሳ - የፍስግ', 'non_fasting', 'supported', 60.00, 50.00, 50.00, 10.00, 4600.00, CURRENT_TIMESTAMP - INTERVAL '25 minutes'),
     
     -- Non-supported employees (salary >= 5000) - they pay normal pricing
     ('EMP006', '59D0E1F2G3', 'lunch', lunch_fasting_id, 'ምሳ - ጾም', 'fasting', 'normal', 50.00, 40.00, 50.00, 0.00, 6500.00, CURRENT_TIMESTAMP - INTERVAL '20 minutes'),
-    ('EMP007', '6AE1F2G3H4', 'lunch', lunch_non_fasting_id, 'ምሳ - የጾም', 'non_fasting', 'normal', 60.00, 50.00, 60.00, 0.00, 7200.00, CURRENT_TIMESTAMP - INTERVAL '15 minutes'),
+    ('EMP007', '6AE1F2G3H4', 'lunch', lunch_non_fasting_id, 'ምሳ - የፍስግ', 'non_fasting', 'normal', 60.00, 50.00, 60.00, 0.00, 7200.00, CURRENT_TIMESTAMP - INTERVAL '15 minutes'),
 
     -- Yesterday's records
     ('EMP001', '04A2B3C4D5', 'breakfast', breakfast_fasting_id, 'ቁርስ - ጾም', 'fasting', 'supported', 30.00, 20.00, 20.00, 10.00, 4500.00, CURRENT_TIMESTAMP - INTERVAL '1 day 2 hours'),
     ('EMP001', '04A2B3C4D5', 'lunch', lunch_fasting_id, 'ምሳ - ጾም', 'fasting', 'supported', 50.00, 40.00, 40.00, 10.00, 4500.00, CURRENT_TIMESTAMP - INTERVAL '1 day 30 minutes'),
-    ('EMP002', '15F6E7D8C9', 'breakfast', breakfast_non_fasting_id, 'ቁርስ - የጾም', 'non_fasting', 'supported', 40.00, 30.00, 30.00, 10.00, 3800.00, CURRENT_TIMESTAMP - INTERVAL '1 day 2 hours'),
+    ('EMP002', '15F6E7D8C9', 'breakfast', breakfast_non_fasting_id, 'ቁርስ - የፍስግ', 'non_fasting', 'supported', 40.00, 30.00, 30.00, 10.00, 3800.00, CURRENT_TIMESTAMP - INTERVAL '1 day 2 hours'),
     ('EMP002', '15F6E7D8C9', 'dinner', dinner_fasting_id, 'እራት - ጾም', 'fasting', 'supported', 45.00, 35.00, 35.00, 10.00, 3800.00, CURRENT_TIMESTAMP - INTERVAL '1 day'),
-    ('EMP004', '37B8C9D0E1', 'lunch', lunch_non_fasting_id, 'ምሳ - የጾም', 'non_fasting', 'supported', 60.00, 50.00, 50.00, 10.00, 4800.00, CURRENT_TIMESTAMP - INTERVAL '1 day 30 minutes'),
+    ('EMP004', '37B8C9D0E1', 'lunch', lunch_non_fasting_id, 'ምሳ - የፍስግ', 'non_fasting', 'supported', 60.00, 50.00, 50.00, 10.00, 4800.00, CURRENT_TIMESTAMP - INTERVAL '1 day 30 minutes'),
     ('EMP005', '48C9D0E1F2', 'breakfast', breakfast_fasting_id, 'ቁርስ - ጾም', 'fasting', 'supported', 30.00, 20.00, 20.00, 10.00, 4600.00, CURRENT_TIMESTAMP - INTERVAL '1 day 2 hours'),
     ('EMP005', '48C9D0E1F2', 'lunch', lunch_fasting_id, 'ምሳ - ጾም', 'fasting', 'supported', 50.00, 40.00, 40.00, 10.00, 4600.00, CURRENT_TIMESTAMP - INTERVAL '1 day 30 minutes'),
-    ('EMP006', '59D0E1F2G3', 'lunch', lunch_non_fasting_id, 'ምሳ - የጾም', 'non_fasting', 'normal', 60.00, 50.00, 60.00, 0.00, 6500.00, CURRENT_TIMESTAMP - INTERVAL '1 day 30 minutes'),
+    ('EMP006', '59D0E1F2G3', 'lunch', lunch_non_fasting_id, 'ምሳ - የፍስግ', 'non_fasting', 'normal', 60.00, 50.00, 60.00, 0.00, 6500.00, CURRENT_TIMESTAMP - INTERVAL '1 day 30 minutes'),
     ('EMP007', '6AE1F2G3H4', 'breakfast', breakfast_fasting_id, 'ቁርስ - ጾም', 'fasting', 'normal', 30.00, 20.00, 30.00, 0.00, 7200.00, CURRENT_TIMESTAMP - INTERVAL '1 day 2 hours'),
     ('EMP009', '8CG3H4I5J6', 'lunch', lunch_fasting_id, 'ምሳ - ጾም', 'fasting', 'normal', 50.00, 40.00, 50.00, 0.00, 5500.00, CURRENT_TIMESTAMP - INTERVAL '1 day 30 minutes'),
-    ('EMP010', '9DH4I5J6K7', 'breakfast', breakfast_non_fasting_id, 'ቁርስ - የጾም', 'non_fasting', 'normal', 40.00, 30.00, 40.00, 0.00, 9200.00, CURRENT_TIMESTAMP - INTERVAL '1 day 2 hours');
+    ('EMP010', '9DH4I5J6K7', 'breakfast', breakfast_non_fasting_id, 'ቁርስ - የፍስግ', 'non_fasting', 'normal', 40.00, 30.00, 40.00, 0.00, 9200.00, CURRENT_TIMESTAMP - INTERVAL '1 day 2 hours');
 
     -- Insert more historical records for better reporting
     INSERT INTO meal_records (employee_id, card_id, meal_type_id, meal_category_id, meal_name, category, price_type, normal_price, supported_price, actual_price, support_amount, employee_salary, recorded_at) VALUES
     -- 2 days ago
     ('EMP001', '04A2B3C4D5', 'breakfast', breakfast_fasting_id, 'ቁርስ - ጾም', 'fasting', 'supported', 30.00, 20.00, 20.00, 10.00, 4500.00, CURRENT_TIMESTAMP - INTERVAL '2 days 2 hours'),
-    ('EMP001', '04A2B3C4D5', 'lunch', lunch_non_fasting_id, 'ምሳ - የጾም', 'non_fasting', 'supported', 60.00, 50.00, 50.00, 10.00, 4500.00, CURRENT_TIMESTAMP - INTERVAL '2 days 30 minutes'),
+    ('EMP001', '04A2B3C4D5', 'lunch', lunch_non_fasting_id, 'ምሳ - የፍስግ', 'non_fasting', 'supported', 60.00, 50.00, 50.00, 10.00, 4500.00, CURRENT_TIMESTAMP - INTERVAL '2 days 30 minutes'),
     ('EMP002', '15F6E7D8C9', 'lunch', lunch_fasting_id, 'ምሳ - ጾም', 'fasting', 'supported', 50.00, 40.00, 40.00, 10.00, 3800.00, CURRENT_TIMESTAMP - INTERVAL '2 days 30 minutes'),
-    ('EMP004', '37B8C9D0E1', 'breakfast', breakfast_non_fasting_id, 'ቁርስ - የጾም', 'non_fasting', 'supported', 40.00, 30.00, 30.00, 10.00, 4800.00, CURRENT_TIMESTAMP - INTERVAL '2 days 2 hours'),
+    ('EMP004', '37B8C9D0E1', 'breakfast', breakfast_non_fasting_id, 'ቁርስ - የፍስግ', 'non_fasting', 'supported', 40.00, 30.00, 30.00, 10.00, 4800.00, CURRENT_TIMESTAMP - INTERVAL '2 days 2 hours'),
     ('EMP004', '37B8C9D0E1', 'lunch', lunch_fasting_id, 'ምሳ - ጾም', 'fasting', 'supported', 50.00, 40.00, 40.00, 10.00, 4800.00, CURRENT_TIMESTAMP - INTERVAL '2 days 30 minutes'),
-    ('EMP005', '48C9D0E1F2', 'lunch', lunch_non_fasting_id, 'ምሳ - የጾም', 'non_fasting', 'supported', 60.00, 50.00, 50.00, 10.00, 4600.00, CURRENT_TIMESTAMP - INTERVAL '2 days 30 minutes'),
+    ('EMP005', '48C9D0E1F2', 'lunch', lunch_non_fasting_id, 'ምሳ - የፍስግ', 'non_fasting', 'supported', 60.00, 50.00, 50.00, 10.00, 4600.00, CURRENT_TIMESTAMP - INTERVAL '2 days 30 minutes'),
     ('EMP006', '59D0E1F2G3', 'breakfast', breakfast_fasting_id, 'ቁርስ - ጾም', 'fasting', 'normal', 30.00, 20.00, 30.00, 0.00, 6500.00, CURRENT_TIMESTAMP - INTERVAL '2 days 2 hours'),
-    ('EMP007', '6AE1F2G3H4', 'lunch', lunch_non_fasting_id, 'ምሳ - የጾም', 'non_fasting', 'normal', 60.00, 50.00, 60.00, 0.00, 7200.00, CURRENT_TIMESTAMP - INTERVAL '2 days 30 minutes'),
+    ('EMP007', '6AE1F2G3H4', 'lunch', lunch_non_fasting_id, 'ምሳ - የፍስግ', 'non_fasting', 'normal', 60.00, 50.00, 60.00, 0.00, 7200.00, CURRENT_TIMESTAMP - INTERVAL '2 days 30 minutes'),
     ('EMP009', '8CG3H4I5J6', 'breakfast', breakfast_fasting_id, 'ቁርስ - ጾም', 'fasting', 'normal', 30.00, 20.00, 30.00, 0.00, 5500.00, CURRENT_TIMESTAMP - INTERVAL '2 days 2 hours'),
     ('EMP010', '9DH4I5J6K7', 'lunch', lunch_fasting_id, 'ምሳ - ጾም', 'fasting', 'normal', 50.00, 40.00, 50.00, 0.00, 9200.00, CURRENT_TIMESTAMP - INTERVAL '2 days 30 minutes');
 
@@ -123,7 +123,7 @@ BEGIN
     -- Insert sample coupon batches
     INSERT INTO coupon_batches (batch_number, title, meal_type_id, meal_category_id, meal_type_name, category, total_coupons, color, generated_by_user_id, generated_by_name, is_active) VALUES
     ('BATCH-LX8K9M2P-A1B2', 'Staff Lunch Coupons - Fasting', 'lunch', lunch_fasting_id, 'ምሳ - ጾም', 'fasting', 50, 'bg-green-500', admin_user_id, 'አድሚን ተስፋዬ', true),
-    ('BATCH-MN7J8K1O-C3D4', 'Guest Breakfast Vouchers - Non-Fasting', 'breakfast', breakfast_non_fasting_id, 'ቁርስ - የጾም', 'non_fasting', 25, 'bg-blue-500', manager_user_id, 'ማናጀር አበበ', true),
+    ('BATCH-MN7J8K1O-C3D4', 'Guest Breakfast Vouchers - Non-Fasting', 'breakfast', breakfast_non_fasting_id, 'ቁርስ - የፍስግ', 'non_fasting', 25, 'bg-blue-500', manager_user_id, 'ማናጀር አበበ', true),
     ('BATCH-OP6I7J0N-E5F6', 'General Lunch Coupons', 'lunch', NULL, 'ምሳ', NULL, 30, 'bg-purple-500', admin_user_id, 'አድሚን ተስፋዬ', false);
     
     -- Insert sample coupons
@@ -131,7 +131,7 @@ BEGIN
     ('LCH001A1', 'BATCH-LX8K9M2P-A1B2', 'Staff Lunch Coupons - Fasting', 'lunch', lunch_fasting_id, 'ምሳ - ጾም', 'fasting', true, true, 'bg-green-500', admin_user_id, 'አድሚን ተስፋዬ', 'EMP001', CURRENT_TIMESTAMP - INTERVAL '2 days'),
     ('LCH002B2', 'BATCH-LX8K9M2P-A1B2', 'Staff Lunch Coupons - Fasting', 'lunch', lunch_fasting_id, 'ምሳ - ጾም', 'fasting', true, true, 'bg-green-500', admin_user_id, 'አድሚን ተስፋዬ', 'EMP002', CURRENT_TIMESTAMP - INTERVAL '1 day'),
     ('LCH003C3', 'BATCH-LX8K9M2P-A1B2', 'Staff Lunch Coupons - Fasting', 'lunch', lunch_fasting_id, 'ምሳ - ጾም', 'fasting', false, true, 'bg-green-500', admin_user_id, 'አድሚን ተስፋዬ', NULL, NULL),
-    ('BRK001F6', 'BATCH-MN7J8K1O-C3D4', 'Guest Breakfast Vouchers - Non-Fasting', 'breakfast', breakfast_non_fasting_id, 'ቁርስ - የጾም', 'non_fasting', false, true, 'bg-blue-500', manager_user_id, 'ማናጀር አበበ', NULL, NULL),
-    ('BRK002G7', 'BATCH-MN7J8K1O-C3D4', 'Guest Breakfast Vouchers - Non-Fasting', 'breakfast', breakfast_non_fasting_id, 'ቁርስ - የጾም', 'non_fasting', false, true, 'bg-blue-500', manager_user_id, 'ማናጀር አበበ', NULL, NULL);
+    ('BRK001F6', 'BATCH-MN7J8K1O-C3D4', 'Guest Breakfast Vouchers - Non-Fasting', 'breakfast', breakfast_non_fasting_id, 'ቁርስ - የፍስግ', 'non_fasting', false, true, 'bg-blue-500', manager_user_id, 'ማናጀር አበበ', NULL, NULL),
+    ('BRK002G7', 'BATCH-MN7J8K1O-C3D4', 'Guest Breakfast Vouchers - Non-Fasting', 'breakfast', breakfast_non_fasting_id, 'ቁርስ - የፍስግ', 'non_fasting', false, true, 'bg-blue-500', manager_user_id, 'ማናጀር አበበ', NULL, NULL);
     
 END $$;

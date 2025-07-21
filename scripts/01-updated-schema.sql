@@ -46,7 +46,7 @@ CREATE TABLE meal_categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     meal_type_id VARCHAR(50) NOT NULL,
     category meal_category NOT NULL,
-    name VARCHAR(100) NOT NULL, -- e.g., "ቁርስ - ጾም", "ቁርስ - የጾም"
+    name VARCHAR(100) NOT NULL, -- e.g., "ቁርስ - ጾም", "ቁርስ - የፍስግ"
     normal_price DECIMAL(10,2) NOT NULL CHECK (normal_price > 0),
     supported_price DECIMAL(10,2) NOT NULL CHECK (supported_price > 0),
     enabled BOOLEAN NOT NULL DEFAULT true,

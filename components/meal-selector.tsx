@@ -59,7 +59,7 @@ export default function MealSelector() {
   }
 
   const getCategoryLabel = (category: "fasting" | "non_fasting") => {
-    return category === "fasting" ? "ጾም" : "የጾም"
+    return category === "fasting" ? "ጾም" : "የፍስግ"
   }
 
   if (loading) {
