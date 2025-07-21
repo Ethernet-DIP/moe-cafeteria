@@ -7,27 +7,30 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Eye, Search, Filter, X, CreditCard, CheckCircle, XCircle } from "lucide-react"
+import { Eye, Search, Filter, X, CreditCard, CheckCircle, XCircle, Pencil } from "lucide-react"
 import { getAllEmployees, toggleEmployeeStatus } from "@/lib/employee-service"
 import type { Employee } from "@/lib/types"
 import EmployeeUsageModal from "@/components/employee-usage-modal"
 import EmployeeAssignmentModal from "@/components/employee-assignment-modal"
+import EmployeeEditModal from "@/components/employee-edit-modal" // Import the new modal
 import Pagination from "@/components/pagination"
 import { useToast } from "@/components/ui/use-toast"
+import { Badge } from "@/components/ui/badge"
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
-  const [modalOpen, setModalOpen] = useState(false)
+  const [usageModalOpen, setUsageModalOpen] = useState(false)
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false)
-  const [employeeToAssign, setEmployeeToAssign] = useState<Employee | null>(null)
+  const [editModalOpen, setEditModalOpen] = useState(false) // State for edit modal
   const { toast } = useToast()
 
   // Filter and search states
   const [searchTerm, setSearchTerm] = useState("")
   const [departmentFilter, setDepartmentFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [supportFilter, setSupportFilter] = useState("all") // New filter for support status
   const [sortBy, setSortBy] = useState("name")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
 
@@ -74,14 +77,17 @@ export default function EmployeesPage() {
       const matchesDepartment = departmentFilter === "all" || employee.department === departmentFilter
       const matchesStatus =
         statusFilter === "all" || (statusFilter === "active" ? employee.isActive : !employee.isActive)
+      const matchesSupport =
+        supportFilter === "all" ||
+        (supportFilter === "eligible" ? employee.eligibleForSupport : !employee.eligibleForSupport)
 
-      return matchesSearch && matchesDepartment && matchesStatus
+      return matchesSearch && matchesDepartment && matchesStatus && matchesSupport
     })
 
     // Sort employees
     filtered.sort((a, b) => {
-      let aValue: string | number
-      let bValue: string | number
+      let aValue: string | number | undefined
+      let bValue: string | number | undefined
 
       switch (sortBy) {
         case "employeeId":
@@ -104,6 +110,10 @@ export default function EmployeesPage() {
           aValue = a.shortCode || ""
           bValue = b.shortCode || ""
           break
+        case "salary":
+          aValue = a.salary || 0
+          bValue = b.salary || 0
+          break
         default:
           aValue = a.name
           bValue = b.name
@@ -112,13 +122,15 @@ export default function EmployeesPage() {
       if (typeof aValue === "string" && typeof bValue === "string") {
         const comparison = aValue.localeCompare(bValue)
         return sortOrder === "asc" ? comparison : -comparison
+      } else if (typeof aValue === "number" && typeof bValue === "number") {
+        return sortOrder === "asc" ? aValue - bValue : bValue - aValue
       }
 
       return 0
     })
 
     return filtered
-  }, [employees, searchTerm, departmentFilter, statusFilter, sortBy, sortOrder])
+  }, [employees, searchTerm, departmentFilter, statusFilter, supportFilter, sortBy, sortOrder])
 
   // Paginate employees
   const paginatedEmployees = useMemo(() => {
@@ -131,12 +143,17 @@ export default function EmployeesPage() {
 
   const handleViewEmployee = (employee: Employee) => {
     setSelectedEmployee(employee)
-    setModalOpen(true)
+    setUsageModalOpen(true)
   }
 
   const handleAssignCard = (employee: Employee) => {
-    setEmployeeToAssign(employee)
+    setSelectedEmployee(employee) // Use selectedEmployee for assignment modal
     setAssignmentModalOpen(true)
+  }
+
+  const handleEditEmployee = (employee: Employee) => {
+    setSelectedEmployee(employee)
+    setEditModalOpen(true)
   }
 
   const handleToggleStatus = async (employee: Employee) => {
@@ -170,6 +187,7 @@ export default function EmployeesPage() {
     setSearchTerm("")
     setDepartmentFilter("all")
     setStatusFilter("all")
+    setSupportFilter("all")
     setSortBy("name")
     setSortOrder("asc")
     setCurrentPage(1)
@@ -179,6 +197,7 @@ export default function EmployeesPage() {
     searchTerm !== "" ||
     departmentFilter !== "all" ||
     statusFilter !== "all" ||
+    supportFilter !== "all" ||
     sortBy !== "name" ||
     sortOrder !== "asc"
 
@@ -192,7 +211,12 @@ export default function EmployeesPage() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <CardTitle>Employee Directory ({filteredAndSortedEmployees.length} employees)</CardTitle>
               {hasActiveFilters && (
-                <Button variant="outline" size="sm" onClick={clearFilters} className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="flex items-center gap-2 bg-transparent"
+                >
                   <X className="h-4 w-4" />
                   Clear Filters
                 </Button>
@@ -254,6 +278,23 @@ export default function EmployeesPage() {
                 </Select>
 
                 <Select
+                  value={supportFilter}
+                  onValueChange={(value) => {
+                    setSupportFilter(value)
+                    setCurrentPage(1)
+                  }}
+                >
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Filter by support" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Support Status</SelectItem>
+                    <SelectItem value="eligible">Eligible for Support</SelectItem>
+                    <SelectItem value="not_eligible">Not Eligible for Support</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select
                   value={`${sortBy}-${sortOrder}`}
                   onValueChange={(value) => {
                     const [field, order] = value.split("-")
@@ -271,6 +312,8 @@ export default function EmployeesPage() {
                     <SelectItem value="employeeId-desc">Employee ID (Z-A)</SelectItem>
                     <SelectItem value="department-asc">Department (A-Z)</SelectItem>
                     <SelectItem value="department-desc">Department (Z-A)</SelectItem>
+                    <SelectItem value="salary-desc">Salary (High-Low)</SelectItem>
+                    <SelectItem value="salary-asc">Salary (Low-High)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -285,10 +328,12 @@ export default function EmployeesPage() {
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow suppressHydrationWarning>
                       <TableHead>Employee ID</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Department</TableHead>
+                      <TableHead>Salary</TableHead>
+                      <TableHead>Support Status</TableHead>
                       <TableHead>Card ID</TableHead>
                       <TableHead>Short Code</TableHead>
                       <TableHead>Status</TableHead>
@@ -297,17 +342,26 @@ export default function EmployeesPage() {
                   </TableHeader>
                   <TableBody>
                     {paginatedEmployees.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8">
+                      <TableRow suppressHydrationWarning>
+                        <TableCell colSpan={9} className="text-center py-8">
                           {filteredAndSortedEmployees.length === 0 ? "No employees found" : "No employees on this page"}
                         </TableCell>
                       </TableRow>
                     ) : (
                       paginatedEmployees.map((employee) => (
-                        <TableRow key={employee.id}>
+                        <TableRow key={employee.id} suppressHydrationWarning>
                           <TableCell className="font-medium">{employee.employeeId}</TableCell>
                           <TableCell>{employee.name}</TableCell>
                           <TableCell>{employee.department}</TableCell>
+                          <TableCell>{employee.salary ? `${employee.salary.toFixed(2)} ETB` : "N/A"}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={employee.eligibleForSupport ? "default" : "destructive"}
+                              className={employee.eligibleForSupport ? "bg-green-500" : "bg-red-500"}
+                            >
+                              {employee.supportStatus}
+                            </Badge>
+                          </TableCell>
                           <TableCell className="font-mono text-sm">
                             {employee.cardId || <span className="text-muted-foreground italic">Not assigned</span>}
                           </TableCell>
@@ -344,6 +398,15 @@ export default function EmployeesPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
+                                onClick={() => handleEditEmployee(employee)}
+                                className="flex items-center gap-1"
+                              >
+                                <Pencil className="h-4 w-4" />
+                                Edit
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => handleAssignCard(employee)}
                                 className="flex items-center gap-1"
                               >
@@ -374,12 +437,19 @@ export default function EmployeesPage() {
         </CardContent>
       </Card>
 
-      <EmployeeUsageModal employee={selectedEmployee} open={modalOpen} onOpenChange={setModalOpen} />
+      <EmployeeUsageModal employee={selectedEmployee} open={usageModalOpen} onOpenChange={setUsageModalOpen} />
 
       <EmployeeAssignmentModal
-        employee={employeeToAssign}
+        employee={selectedEmployee}
         open={assignmentModalOpen}
         onOpenChange={setAssignmentModalOpen}
+        onSuccess={fetchData}
+      />
+
+      <EmployeeEditModal
+        employee={selectedEmployee}
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
         onSuccess={fetchData}
       />
     </div>

@@ -236,7 +236,12 @@ export default function UsersPage() {
               <CardTitle>System Users ({filteredAndSortedUsers.length} users)</CardTitle>
               <div className="flex gap-2">
                 {hasActiveFilters && (
-                  <Button variant="outline" size="sm" onClick={clearFilters} className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 bg-transparent"
+                  >
                     <X className="h-4 w-4" />
                     Clear Filters
                   </Button>
@@ -335,7 +340,7 @@ export default function UsersPage() {
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow suppressHydrationWarning>
                       <TableHead>Username</TableHead>
                       <TableHead>Full Name</TableHead>
                       <TableHead>Email</TableHead>
@@ -347,14 +352,14 @@ export default function UsersPage() {
                   </TableHeader>
                   <TableBody>
                     {paginatedUsers.length === 0 ? (
-                      <TableRow>
+                      <TableRow suppressHydrationWarning>
                         <TableCell colSpan={7} className="text-center py-8">
                           {filteredAndSortedUsers.length === 0 ? "No users found" : "No users on this page"}
                         </TableCell>
                       </TableRow>
                     ) : (
                       paginatedUsers.map((user) => (
-                        <TableRow key={user.id}>
+                        <TableRow key={user.id} suppressHydrationWarning>
                           <TableCell className="font-medium">{user.username}</TableCell>
                           <TableCell>{user.fullName}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{user.email}</TableCell>

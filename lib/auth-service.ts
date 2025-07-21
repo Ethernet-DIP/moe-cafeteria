@@ -1,6 +1,5 @@
 "use client"
 
-import {remoteAxiosInstance} from "./axiosInstance";
 import type { User, LoginCredentials } from "./types"
 
 // Demo users - in a real app, this would come from a database
@@ -9,7 +8,7 @@ const DEMO_USERS: (User & { password: string })[] = [
     id: "1",
     username: "admin",
     password: "admin123",
-    email: "cafe-admin@ethernet.edu.et",
+    email: "admin@ministry.gov.et",
     fullName: "አድሚን ተስፋዬ",
     role: "admin",
     isActive: true,
@@ -20,7 +19,7 @@ const DEMO_USERS: (User & { password: string })[] = [
     id: "2",
     username: "manager",
     password: "manager123",
-    email: "manager@ethernet.edu.et",
+    email: "manager@ministry.gov.et",
     fullName: "ማናጀር አበበ",
     role: "manager",
     isActive: true,
@@ -31,7 +30,7 @@ const DEMO_USERS: (User & { password: string })[] = [
     id: "3",
     username: "operator",
     password: "operator123",
-    email: "operator@ethernet.edu.et",
+    email: "operator@ministry.gov.et",
     fullName: "ኦፐሬተር ሰላም",
     role: "operator",
     isActive: true,
@@ -40,9 +39,7 @@ const DEMO_USERS: (User & { password: string })[] = [
 ]
 
 // Get all users
-const getUsers = async(): Promise<(User&{password: string;})[]> => {
-    // return remoteAxiosInstance.get("/users").then(response =>response.data).catch(err=> console.log(err));
-  
+const getUsers = (): (User & { password: string })[] => {
   const storedUsers = localStorage.getItem("users")
   return storedUsers ? JSON.parse(storedUsers) : DEMO_USERS
 }
@@ -63,7 +60,8 @@ export const login = async (credentials: LoginCredentials): Promise<User> => {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 1000))
 
-  const users = await getUsers()
+  const users = getUsers()
+  console.log(users)
   const user = users.find(
     (u) => u.username === credentials.username && u.password === credentials.password && u.isActive,
   )
@@ -117,7 +115,7 @@ export const getAllUsers = async (): Promise<User[]> => {
     throw new Error("Unauthorized")
   }
 
-  const users = await getUsers()
+  const users = getUsers()
   return users.map(({ password, ...user }) => user)
 }
 
@@ -130,7 +128,7 @@ export const createUser = async (userData: Omit<User, "id" | "createdAt"> & { pa
     throw new Error("Unauthorized")
   }
 
-  const users = await getUsers()
+  const users = getUsers()
 
   // Check if username already exists
   if (users.some((u) => u.username === userData.username)) {
@@ -152,7 +150,6 @@ export const createUser = async (userData: Omit<User, "id" | "createdAt"> & { pa
   saveUsers(users)
 
   const { password, ...userResponse } = newUser
-  // remoteAxiosInstance.post("/users", newUser)
   return userResponse
 }
 
@@ -165,7 +162,7 @@ export const updateUser = async (id: string, updates: Partial<User & { password?
     throw new Error("Unauthorized")
   }
 
-  const users = await getUsers()
+  const users = getUsers()
   const userIndex = users.findIndex((u) => u.id === id)
 
   if (userIndex === -1) {
@@ -199,10 +196,9 @@ export const deleteUser = async (id: string): Promise<void> => {
     throw new Error("Unauthorized")
   }
 
-  const users = await getUsers()
+  const users = getUsers()
   const filteredUsers = users.filter((u) => u.id !== id)
 
-  await remoteAxiosInstance.delete(`/users/${id}`);
   if (filteredUsers.length === users.length) {
     throw new Error("User not found")
   }
@@ -219,7 +215,7 @@ export const toggleUserStatus = async (id: string): Promise<User> => {
     throw new Error("Unauthorized")
   }
 
-  const users = await getUsers()
+  const users = getUsers()
   const userIndex = users.findIndex((u) => u.id === id)
 
   if (userIndex === -1) {

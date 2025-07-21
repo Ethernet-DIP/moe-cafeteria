@@ -11,6 +11,15 @@ import { getAllEmployees, getAllMealRecords } from "@/lib/employee-service"
 import { getMealTypes } from "@/lib/meal-service"
 import type { Employee, MealRecord, MealType } from "@/lib/types"
 import Pagination from "@/components/pagination"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { DotsHorizontalIcon } from "@radix-ui/react-icons"
+import { toast } from "@/hooks/use-toast"
 
 export default function MealRecordsPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -43,6 +52,11 @@ export default function MealRecordsPage() {
         setMealTypes(mealTypeData)
       } catch (error) {
         console.error("Error fetching data:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load meal records. Please try again.",
+          variant: "destructive",
+        })
       } finally {
         setLoading(false)
       }
@@ -79,7 +93,8 @@ export default function MealRecordsPage() {
   const filteredAndSortedRecords = useMemo(() => {
     const filtered = mealRecords.filter((record) => {
       const employee = employees.find((e) => e.employeeId === record.employeeId)
-      const searchString = `${record.employeeId} ${employee?.name || ""} ${record.mealName}`.toLowerCase()
+      const searchString =
+        `${record.employeeId} ${employee?.name || ""} ${record.mealName} ${record.category}`.toLowerCase()
       const matchesSearch = searchTerm === "" || searchString.includes(searchTerm.toLowerCase())
 
       const matchesMealType = mealTypeFilter === "all" || record.mealTypeId === mealTypeFilter
@@ -128,9 +143,9 @@ export default function MealRecordsPage() {
           aValue = a.mealName
           bValue = b.mealName
           break
-        case "price":
-          aValue = a.price
-          bValue = b.price
+        case "actualPrice": // Use actualPrice for sorting
+          aValue = a.actualPrice
+          bValue = b.actualPrice
           break
         case "timestamp":
           aValue = new Date(a.timestamp).getTime()
@@ -188,6 +203,40 @@ export default function MealRecordsPage() {
     sortBy !== "timestamp" ||
     sortOrder !== "desc"
 
+  const handleCopyRecordId = (id: string) => {
+    navigator.clipboard.writeText(id)
+    toast({
+      title: "Copied!",
+      description: "Record ID copied to clipboard.",
+    })
+  }
+
+  const handleViewDetails = (record: MealRecord) => {
+    toast({
+      title: "View Details",
+      description: `Viewing details for record ID: ${record.id}`,
+    })
+    console.log("View details for record:", record)
+  }
+
+  const handleEditRecord = (record: MealRecord) => {
+    toast({
+      title: "Edit Record",
+      description: `Editing record ID: ${record.id}`,
+    })
+    console.log("Edit record:", record)
+  }
+
+  const handleDeleteRecord = (record: MealRecord) => {
+    toast({
+      title: "Delete Record",
+      description: `Deleting record ID: ${record.id}`,
+      variant: "destructive",
+    })
+    console.log("Delete record:", record)
+    // In a real app, you'd call an API to delete the record and then refresh the list
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">Meal Records</h1>
@@ -198,7 +247,12 @@ export default function MealRecordsPage() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <CardTitle>Recent Meal Records ({filteredAndSortedRecords.length} records)</CardTitle>
               {hasActiveFilters && (
-                <Button variant="outline" size="sm" onClick={clearFilters} className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="flex items-center gap-2 bg-transparent"
+                >
                   <X className="h-4 w-4" />
                   Clear Filters
                 </Button>
@@ -280,8 +334,8 @@ export default function MealRecordsPage() {
                     <SelectItem value="employeeId-desc">Employee ID (Z-A)</SelectItem>
                     <SelectItem value="mealName-asc">Meal Type (A-Z)</SelectItem>
                     <SelectItem value="mealName-desc">Meal Type (Z-A)</SelectItem>
-                    <SelectItem value="price-desc">Price (High-Low)</SelectItem>
-                    <SelectItem value="price-asc">Price (Low-High)</SelectItem>
+                    <SelectItem value="actualPrice-desc">Price (High-Low)</SelectItem> {/* Updated to actualPrice */}
+                    <SelectItem value="actualPrice-asc">Price (Low-High)</SelectItem> {/* Updated to actualPrice */}
                   </SelectContent>
                 </Select>
               </div>
@@ -296,18 +350,21 @@ export default function MealRecordsPage() {
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow suppressHydrationWarning>
                       <TableHead>Employee ID</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Meal Type</TableHead>
-                      <TableHead>Price</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Price Paid</TableHead>
+                      <TableHead>Subsidy</TableHead>
                       <TableHead>Time</TableHead>
+                      <TableHead className="w-[50px]"></TableHead> {/* Actions column */}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginatedRecords.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8">
+                      <TableRow suppressHydrationWarning>
+                        <TableCell colSpan={8} className="text-center py-8">
                           {filteredAndSortedRecords.length === 0 ? "No meal records found" : "No records on this page"}
                         </TableCell>
                       </TableRow>
@@ -317,16 +374,43 @@ export default function MealRecordsPage() {
                         const mealType = mealTypes.find((mt) => mt.id === record.mealTypeId)
 
                         return (
-                          <TableRow key={record.id}>
+                          <TableRow key={record.id} suppressHydrationWarning>
                             <TableCell className="font-medium">{record.employeeId}</TableCell>
                             <TableCell>{employee?.name || "Unknown"}</TableCell>
                             <TableCell className="flex items-center">
                               {mealType ? getMealIcon(mealType.icon) : null}
                               <span className="ml-2">{record.mealName}</span>
                             </TableCell>
-                            <TableCell className="font-medium">{record.price.toFixed(2)} ETB</TableCell>
+                            <TableCell>{record.category === "fasting" ? "Fasting" : "Non-Fasting"}</TableCell>
+                            <TableCell className="font-medium">{record.actualPrice.toFixed(2)} ETB</TableCell>
+                            <TableCell className="font-medium">{record.supportAmount.toFixed(2)} ETB</TableCell>
                             <TableCell className="text-sm text-muted-foreground">
                               {formatDate(record.timestamp)}
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" className="h-8 w-8 p-0">
+                                    <span className="sr-only">Open menu</span>
+                                    <DotsHorizontalIcon className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleCopyRecordId(record.id)}>
+                                    Copy record ID
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => handleViewDetails(record)}>
+                                    View details
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleEditRecord(record)}>
+                                    Edit record
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDeleteRecord(record)}>
+                                    Delete record
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </TableCell>
                           </TableRow>
                         )

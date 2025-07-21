@@ -7,20 +7,21 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
-import { AlertCircle, CheckCircle, Utensils, Coffee, Moon } from "lucide-react"
+import { AlertCircle, CheckCircle, Utensils, Coffee, Moon, Leaf, UtensilsCrossed, DollarSign } from "lucide-react"
 import Image from "next/image"
-import type { Employee, MealType } from "@/lib/types"
-import { getEmployeeByCardId, recordMeal, hasUsedMeal } from "@/lib/employee-service"
-import { getMealTypeById } from "@/lib/meal-service"
+import type { Employee, MealCategory } from "@/lib/types"
+import { getEmployeeByCardId, recordMeal, hasUsedMeal, getMealPricing } from "@/lib/employee-service"
+import { getMealCategoryById } from "@/lib/meal-service"
 
 interface CafeteriaScannerProps {
-  mealTypeId: string
+  mealCategoryId: string
 }
 
-export default function CafeteriaScanner({ mealTypeId }: CafeteriaScannerProps) {
+export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerProps) {
   const [inputValue, setInputValue] = useState("")
   const [employee, setEmployee] = useState<Employee | null>(null)
-  const [mealType, setMealType] = useState<MealType | null>(null)
+  const [mealCategory, setMealCategory] = useState<MealCategory | null>(null)
+  const [pricing, setPricing] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [processing, setProcessing] = useState(false)
@@ -31,8 +32,8 @@ export default function CafeteriaScanner({ mealTypeId }: CafeteriaScannerProps) 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
-    // successAudioRef.current = new Audio("/success.mp3")
-    // errorAudioRef.current = new Audio("/error.mp3")
+    successAudioRef.current = new Audio("https://assets.mixkit.co/active_storage/sfx/2005/2005-preview.mp3")
+    errorAudioRef.current = new Audio("https://assets.mixkit.co/active_storage/sfx/2053/2053-preview.mp3")
 
     // Always keep input focused
     const focusInput = () => {
@@ -44,25 +45,25 @@ export default function CafeteriaScanner({ mealTypeId }: CafeteriaScannerProps) 
     focusInput()
     const interval = setInterval(focusInput, 100)
 
-    // Fetch meal type
-    const fetchMealType = async () => {
+    // Fetch meal category
+    const fetchMealCategory = async () => {
       try {
-        const mt = await getMealTypeById(mealTypeId)
-        setMealType(mt)
+        const category = await getMealCategoryById(mealCategoryId)
+        setMealCategory(category)
       } catch (error) {
-        console.error("Error fetching meal type:", error)
+        console.error("Error fetching meal category:", error)
         toast({
           title: "Error",
-          description: "Could not load meal type information",
+          description: "Could not load meal information",
           variant: "destructive",
         })
       }
     }
 
-    fetchMealType()
+    fetchMealCategory()
 
     return () => clearInterval(interval)
-  }, [mealTypeId, processing, toast])
+  }, [mealCategoryId, processing, toast])
 
   useEffect(() => {
     // Initialize NFC reader if available
@@ -127,10 +128,11 @@ export default function CafeteriaScanner({ mealTypeId }: CafeteriaScannerProps) 
   }
 
   const processInput = async (input: string) => {
-    if (processing || !input.trim() || !mealType) return
+    if (processing || !input.trim() || !mealCategory) return
 
     setProcessing(true)
     setEmployee(null)
+    setPricing(null)
     setError(null)
     setSuccess(false)
 
@@ -138,19 +140,23 @@ export default function CafeteriaScanner({ mealTypeId }: CafeteriaScannerProps) 
       const emp = await getEmployeeByCardId(input.trim())
       setEmployee(emp)
 
-      const alreadyUsed = await hasUsedMeal(emp.cardId, mealTypeId)
+      // Get pricing information for this employee
+      const pricingInfo = await getMealPricing(emp, mealCategoryId)
+      setPricing(pricingInfo)
+
+      const alreadyUsed = await hasUsedMeal(emp.cardId, mealCategory.mealTypeId)
 
       if (alreadyUsed) {
-        setError(`${emp.name} has already used their ${mealType.name} allowance today.`)
-        // errorAudioRef.current?.play()
+        setError(`${emp.name} has already used their ${mealCategory.name} allowance today.`)
+        errorAudioRef.current?.play()
       } else {
-        await recordMeal(emp.cardId, mealTypeId)
+        await recordMeal(emp.cardId, mealCategoryId)
         setSuccess(true)
-        // successAudioRef.current?.play()
+        successAudioRef.current?.play()
       }
     } catch (err) {
       setError("Employee not found with this card or code.")
-      // errorAudioRef.current?.play()
+      errorAudioRef.current?.play()
     } finally {
       setProcessing(false)
       setInputValue("")
@@ -158,6 +164,7 @@ export default function CafeteriaScanner({ mealTypeId }: CafeteriaScannerProps) 
       // Clear results after 3 seconds
       setTimeout(() => {
         setEmployee(null)
+        setPricing(null)
         setError(null)
         setSuccess(false)
       }, 3000)
@@ -165,30 +172,41 @@ export default function CafeteriaScanner({ mealTypeId }: CafeteriaScannerProps) 
   }
 
   const getMealIcon = () => {
-    if (!mealType) return <Utensils className="h-6 w-6" />
+    if (!mealCategory) return <Utensils className="h-6 w-6" />
 
-    switch (mealType.icon) {
-      case "coffee":
-        return <Coffee className="h-6 w-6" />
-      case "utensils":
-        return <Utensils className="h-6 w-6" />
-      case "moon":
-        return <Moon className="h-6 w-6" />
-      default:
-        return <Utensils className="h-6 w-6" />
+    // Get the meal type icon from the meal category's meal type
+    const iconMap = {
+      breakfast: <Coffee className="h-6 w-6" />,
+      lunch: <Utensils className="h-6 w-6" />,
+      dinner: <Moon className="h-6 w-6" />,
     }
+
+    return iconMap[mealCategory.mealTypeId as keyof typeof iconMap] || <Utensils className="h-6 w-6" />
+  }
+
+  const getCategoryIcon = () => {
+    if (!mealCategory) return null
+    return mealCategory.category === "fasting" ? <Leaf className="h-4 w-4" /> : <UtensilsCrossed className="h-4 w-4" />
   }
 
   return (
     <div className="space-y-6">
       <Card className="overflow-hidden">
         <CardContent className="p-6">
-          {mealType && (
+          {mealCategory && (
             <div className="flex items-center justify-center mb-6">
-              <div className={`p-3 rounded-full ${mealType.color}`}>{getMealIcon()}</div>
-              <div className="ml-3">
-                <h2 className="text-xl font-semibold">{mealType.name} Scanning</h2>
-                <p className="text-sm text-gray-500">{mealType.price.toFixed(2)} ETB</p>
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-full bg-gray-100">{getMealIcon()}</div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-semibold">{mealCategory.name}</h2>
+                    {getCategoryIcon()}
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                    <span>Normal: {mealCategory.normalPrice.toFixed(2)} ETB</span>
+                    <span className="text-green-600">Supported: {mealCategory.supportedPrice.toFixed(2)} ETB</span>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -233,14 +251,50 @@ export default function CafeteriaScanner({ mealTypeId }: CafeteriaScannerProps) 
                 <p className="text-gray-500">{employee.department}</p>
                 <p className="text-sm text-gray-400">ID: {employee.employeeId}</p>
                 <p className="text-sm text-gray-400">Code: {employee.shortCode}</p>
+                {employee.salary && <p className="text-sm text-gray-400">Salary: {employee.salary.toFixed(2)} ETB</p>}
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  <div
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      employee.eligibleForSupport ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {employee.supportStatus}
+                  </div>
+                </div>
               </div>
 
+              {pricing && (
+                <div className="w-full max-w-sm">
+                  <Card
+                    className={`border-2 ${pricing.priceType === "supported" ? "border-green-500 bg-green-50" : "border-blue-500 bg-blue-50"}`}
+                  >
+                    <CardContent className="p-4 text-center">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <DollarSign className="h-5 w-5" />
+                        <span className="font-semibold">
+                          {pricing.priceType === "supported" ? "Supported Price" : "Normal Price"}
+                        </span>
+                      </div>
+                      <div className="text-2xl font-bold mb-2">{pricing.applicablePrice.toFixed(2)} ETB</div>
+                      {pricing.priceType === "supported" && (
+                        <div className="text-sm text-green-600">Subsidy {pricing.supportAmount.toFixed(2)} ETB</div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
               {error ? (
-                <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-md text-center">{error}</div>
-              ) : success && mealType ? (
-                <div className="mt-4 p-3 bg-green-50 text-green-700 rounded-md text-center">
-                  <p>{mealType.name} access granted!</p>
-                  <p className="font-bold mt-1">{mealType.price.toFixed(2)} ETB</p>
+                <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-md text-center w-full max-w-sm">{error}</div>
+              ) : success && mealCategory && pricing ? (
+                <div className="mt-4 p-3 bg-green-50 text-green-700 rounded-md text-center w-full max-w-sm">
+                  <p className="font-semibold">{mealCategory.name} access granted!</p>
+                  <p className="text-sm mt-1">
+                    Charged: {pricing.applicablePrice.toFixed(2)} ETB
+                    {pricing.priceType === "supported" && (
+                      <span className="block">Saved: {pricing.supportAmount.toFixed(2)} ETB</span>
+                    )}
+                  </p>
                 </div>
               ) : null}
             </div>
@@ -249,9 +303,7 @@ export default function CafeteriaScanner({ mealTypeId }: CafeteriaScannerProps) 
               {processing ? (
                 <div className="space-y-4">
                   <div className="animate-pulse flex justify-center">
-                    <div
-                      className={`w-16 h-16 ${mealType?.color || "bg-gray-100 text-gray-700"} rounded-full flex items-center justify-center`}
-                    >
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
                       {getMealIcon()}
                     </div>
                   </div>

@@ -1,8 +1,9 @@
 "use client"
 
-import type React from "react"
+import { useEffect, useState, type FormEvent } from "react"
+import Image from "next/image"
+import { Ticket, Palette, Hash } from "lucide-react"
 
-import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,11 +11,10 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
-import { Ticket, Palette, Hash } from "lucide-react"
+
 import type { MealType } from "@/lib/types"
 import { getMealTypes } from "@/lib/meal-service"
 import { generateCoupons } from "@/lib/coupon-service"
-import Image from "next/image"
 
 interface CouponGeneratorModalProps {
   open: boolean
@@ -35,20 +35,24 @@ const COUPON_COLORS = [
 
 export default function CouponGeneratorModal({ open, onOpenChange, onSuccess }: CouponGeneratorModalProps) {
   const [mealTypes, setMealTypes] = useState<MealType[]>([])
+  const [loading, setLoading] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const { toast } = useToast()
+
   const [formData, setFormData] = useState({
     count: "",
     mealTypeId: "",
     title: "",
     color: COUPON_COLORS[0].value,
   })
-  const [loading, setLoading] = useState(false)
-  const [generating, setGenerating] = useState(false)
-  const { toast } = useToast()
 
+  /* ------------------------------------------------------------------------ */
+  /* Data loading                                                             */
+  /* ------------------------------------------------------------------------ */
   useEffect(() => {
     if (open) {
       fetchMealTypes()
-      // Reset form
+      // reset
       setFormData({
         count: "",
         mealTypeId: "",
@@ -58,13 +62,13 @@ export default function CouponGeneratorModal({ open, onOpenChange, onSuccess }: 
     }
   }, [open])
 
-  const fetchMealTypes = async () => {
+  async function fetchMealTypes() {
     setLoading(true)
     try {
-      const mealTypeData = await getMealTypes()
-      setMealTypes(mealTypeData.filter((mt) => mt.enabled))
-    } catch (error) {
-      console.error("Error fetching meal types:", error)
+      const data = await getMealTypes()
+      setMealTypes(data.filter((m) => m.enabled))
+    } catch (err) {
+      console.error(err)
       toast({
         title: "Error",
         description: "Failed to load meal types",
@@ -75,45 +79,45 @@ export default function CouponGeneratorModal({ open, onOpenChange, onSuccess }: 
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  /* ------------------------------------------------------------------------ */
+  /* Submit handler                                                           */
+  /* ------------------------------------------------------------------------ */
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
 
     if (!formData.count || !formData.mealTypeId || !formData.title.trim()) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields",
+        title: "Missing data",
+        description: "Please fill in all required fields.",
         variant: "destructive",
       })
       return
     }
 
-    const count = Number.parseInt(formData.count)
+    const count = Number.parseInt(formData.count, 10)
     if (isNaN(count) || count <= 0 || count > 1000) {
       toast({
-        title: "Error",
-        description: "Please enter a valid number of coupons (1-1000)",
+        title: "Invalid count",
+        description: "Enter a number between 1 and 1000.",
         variant: "destructive",
       })
       return
     }
 
     setGenerating(true)
-
     try {
-      const result = await generateCoupons(count, formData.mealTypeId, formData.title.trim(), formData.color)
-
+      const { batchNumber } = await generateCoupons(count, formData.mealTypeId, formData.title.trim(), formData.color)
       toast({
         title: "Success",
-        description: `Generated ${count} coupons with batch number: ${result.batchNumber}`,
+        description: `Generated ${count} coupons (batch ${batchNumber}).`,
       })
-
       onSuccess()
       onOpenChange(false)
-    } catch (error) {
-      console.error("Error generating coupons:", error)
+    } catch (err) {
+      console.error(err)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate coupons",
+        description: err instanceof Error ? err.message : "Failed to generate coupons.",
         variant: "destructive",
       })
     } finally {
@@ -121,9 +125,15 @@ export default function CouponGeneratorModal({ open, onOpenChange, onSuccess }: 
     }
   }
 
-  const selectedColor = COUPON_COLORS.find((c) => c.value === formData.color) || COUPON_COLORS[0]
-  const selectedMealType = mealTypes.find((mt) => mt.id === formData.mealTypeId)
+  /* ------------------------------------------------------------------------ */
+  /* Derived selections                                                        */
+  /* ------------------------------------------------------------------------ */
+  const selectedColor = COUPON_COLORS.find((c) => c.value === formData.color) ?? COUPON_COLORS[0]
+  const selectedMealType = mealTypes.find((m) => m.id === formData.mealTypeId)
 
+  /* ------------------------------------------------------------------------ */
+  /* Render                                                                    */
+  /* ------------------------------------------------------------------------ */
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -135,7 +145,7 @@ export default function CouponGeneratorModal({ open, onOpenChange, onSuccess }: 
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Coupon Count */}
+          {/* Number of coupons ------------------------------------------------ */}
           <div className="space-y-2">
             <Label htmlFor="count">Number of Coupons *</Label>
             <div className="relative">
@@ -143,11 +153,11 @@ export default function CouponGeneratorModal({ open, onOpenChange, onSuccess }: 
               <Input
                 id="count"
                 type="number"
-                min="1"
-                max="1000"
+                min={1}
+                max={1000}
                 value={formData.count}
                 onChange={(e) => setFormData({ ...formData, count: e.target.value })}
-                placeholder="Enter number of coupons"
+                placeholder="Enter quantity"
                 className="pl-8"
                 required
               />
@@ -155,63 +165,63 @@ export default function CouponGeneratorModal({ open, onOpenChange, onSuccess }: 
             <p className="text-xs text-muted-foreground">Maximum 1000 coupons per batch</p>
           </div>
 
-          {/* Meal Type */}
+          {/* Meal type ------------------------------------------------------- */}
           <div className="space-y-2">
             <Label htmlFor="mealType">Meal Type *</Label>
             <Select
               value={formData.mealTypeId}
-              onValueChange={(value) => setFormData({ ...formData, mealTypeId: value })}
+              onValueChange={(v) => setFormData({ ...formData, mealTypeId: v })}
               disabled={loading}
             >
               <SelectTrigger id="mealType">
                 <SelectValue placeholder="Select meal type" />
               </SelectTrigger>
               <SelectContent>
-                {mealTypes.map((mealType) => (
-                  <SelectItem key={mealType.id} value={mealType.id}>
-                    {mealType.name} - {mealType.price.toFixed(2)} ETB
+                {mealTypes.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Coupon Title */}
+          {/* Title ----------------------------------------------------------- */}
           <div className="space-y-2">
             <Label htmlFor="title">Coupon Title *</Label>
             <Input
               id="title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="e.g., Staff Lunch Coupon, Guest Meal Voucher"
+              placeholder="e.g. Staff Lunch Coupon"
               required
             />
           </div>
 
-          {/* Color Selection */}
+          {/* Color picker ---------------------------------------------------- */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <Palette className="h-4 w-4" />
               Coupon Color
             </Label>
             <div className="grid grid-cols-4 gap-2">
-              {COUPON_COLORS.map((color) => (
+              {COUPON_COLORS.map((c) => (
                 <button
-                  key={color.value}
+                  key={c.value}
                   type="button"
-                  onClick={() => setFormData({ ...formData, color: color.value })}
+                  onClick={() => setFormData({ ...formData, color: c.value })}
                   className={`p-2 rounded-lg border-2 transition-all ${
-                    formData.color === color.value ? "border-gray-900 ring-2 ring-gray-300" : "border-gray-200"
+                    formData.color === c.value ? "border-gray-900 ring-2 ring-gray-300" : "border-gray-200"
                   }`}
                 >
-                  <div className={`w-full h-8 rounded ${color.value}`}></div>
-                  <p className="text-xs mt-1">{color.name}</p>
+                  <div className={`w-full h-8 rounded ${c.value}`} />
+                  <p className="text-xs mt-1">{c.name}</p>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Preview */}
+          {/* Live preview ---------------------------------------------------- */}
           {formData.title && selectedMealType && (
             <div className="space-y-2">
               <Label>Preview</Label>
@@ -239,6 +249,7 @@ export default function CouponGeneratorModal({ open, onOpenChange, onSuccess }: 
             </div>
           )}
 
+          {/* Footer ---------------------------------------------------------- */}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={generating}>
               Cancel
@@ -246,8 +257,8 @@ export default function CouponGeneratorModal({ open, onOpenChange, onSuccess }: 
             <Button type="submit" disabled={generating || loading}>
               {generating ? (
                 <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Generating...
+                  <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Generating…
                 </div>
               ) : (
                 "Generate Coupons"

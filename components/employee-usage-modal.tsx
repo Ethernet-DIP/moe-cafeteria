@@ -170,7 +170,7 @@ export default function EmployeeUsageModal({ employee, open, onOpenChange }: Emp
                             {getMealIcon(record.mealTypeId)}
                             <span className="ml-2">{record.mealName}</span>
                           </TableCell>
-                          <TableCell>{record.price.toFixed(2)} ETB</TableCell>
+                          <TableCell>{record.actualPrice.toFixed(2)} ETB</TableCell>
                           <TableCell>{formatDate(record.timestamp)}</TableCell>
                         </TableRow>
                       ))

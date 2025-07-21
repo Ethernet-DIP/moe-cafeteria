@@ -1,10 +1,19 @@
 export interface MealType {
   id: string
   name: string
-  price: number
   icon: string
   enabled: boolean
   color: string
+}
+
+export interface MealCategory {
+  id: string
+  mealTypeId: string
+  category: "fasting" | "non_fasting"
+  name: string
+  normalPrice: number
+  supportedPrice: number
+  enabled: boolean
 }
 
 export interface Employee {
@@ -14,8 +23,11 @@ export interface Employee {
   shortCode: string
   name: string
   department: string
+  salary?: number
   photoUrl?: string
   isActive: boolean
+  eligibleForSupport?: boolean
+  supportStatus?: string
 }
 
 export interface MealRecord {
@@ -23,20 +35,31 @@ export interface MealRecord {
   employeeId: string
   cardId: string
   mealTypeId: string
+  mealCategoryId: string
   mealName: string
-  price: number
+  category: "fasting" | "non_fasting"
+  priceType: "normal" | "supported"
+  normalPrice: number
+  supportedPrice: number
+  actualPrice: number
+  supportAmount: number
+  employeeSalary?: number
   timestamp: string
 }
 
 export interface EmployeeUsageStats {
   totalMeals: number
   totalAmount: number
+  totalSubsidy: number
+  totalSavings: number
   mealCounts: {
     [mealTypeId: string]: number
   }
   mealAmounts: {
     [mealTypeId: string]: number
   }
+  supportedMeals: number
+  normalMeals: number
 }
 
 export interface User {
@@ -61,7 +84,9 @@ export interface Coupon {
   batchNumber: string
   title: string
   mealTypeId: string
+  mealCategoryId?: string
   mealTypeName: string
+  category?: "fasting" | "non_fasting"
   isUsed: boolean
   isActive: boolean
   color: string
@@ -75,11 +100,44 @@ export interface CouponBatch {
   batchNumber: string
   title: string
   mealTypeId: string
+  mealCategoryId?: string
   mealTypeName: string
+  category?: "fasting" | "non_fasting"
   totalCoupons: number
   usedCoupons: number
   isActive: boolean
   color: string
   generatedBy: string
   generatedAt: string
+}
+
+export interface SupportConfig {
+  id: string
+  maxSalaryForSupport: number
+  isActive: boolean
+}
+
+export interface SupportSummary {
+  totalMeals: number
+  supportedMeals: number
+  normalMeals: number
+  totalRevenue: number
+  totalSubsidy: number
+  potentialRevenue: number
+  supportedEmployees: number
+  totalEmployees: number
+  supportPercentage: number
+}
+
+export interface DepartmentSupportAnalysis {
+  department: string
+  totalEmployees: number
+  eligibleEmployees: number
+  employeesUsingSupport: number
+  totalMeals: number
+  supportedMeals: number
+  totalRevenue: number
+  totalSubsidy: number
+  avgDepartmentSalary: number
+  eligibilityPercentage: number
 }

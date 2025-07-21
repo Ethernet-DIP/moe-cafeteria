@@ -1,14 +1,12 @@
 "use client"
 
-import {remoteAxiosInstance} from "./axiosInstance";
-import type { MealType } from "./types"
+import type { MealType, MealCategory } from "./types"
 
 // Default meal types
 const DEFAULT_MEAL_TYPES: MealType[] = [
   {
     id: "breakfast",
     name: "ቁርስ",
-    price: 80,
     icon: "coffee",
     enabled: true,
     color: "bg-amber-100 text-amber-700",
@@ -16,7 +14,6 @@ const DEFAULT_MEAL_TYPES: MealType[] = [
   {
     id: "lunch",
     name: "ምሳ",
-    price: 150,
     icon: "utensils",
     enabled: true,
     color: "bg-emerald-100 text-emerald-700",
@@ -24,22 +21,110 @@ const DEFAULT_MEAL_TYPES: MealType[] = [
   {
     id: "dinner",
     name: "እራት",
-    price: 120,
     icon: "moon",
     enabled: true,
     color: "bg-indigo-100 text-indigo-700",
   },
 ]
 
+// Default meal categories with fasting/non-fasting variants
+const DEFAULT_MEAL_CATEGORIES: MealCategory[] = [
+  // Breakfast categories
+  {
+    id: "breakfast-fasting",
+    mealTypeId: "breakfast",
+    category: "fasting",
+    name: "ቁርስ - ጾም",
+    normalPrice: 30,
+    supportedPrice: 20,
+    enabled: true,
+  },
+  {
+    id: "breakfast-non-fasting",
+    mealTypeId: "breakfast",
+    category: "non_fasting",
+    name: "ቁርስ - የጾም",
+    normalPrice: 40,
+    supportedPrice: 30,
+    enabled: true,
+  },
+  // Lunch categories
+  {
+    id: "lunch-fasting",
+    mealTypeId: "lunch",
+    category: "fasting",
+    name: "ምሳ - ጾም",
+    normalPrice: 50,
+    supportedPrice: 40,
+    enabled: true,
+  },
+  {
+    id: "lunch-non-fasting",
+    mealTypeId: "lunch",
+    category: "non_fasting",
+    name: "ምሳ - የጾም",
+    normalPrice: 60,
+    supportedPrice: 50,
+    enabled: true,
+  },
+  // Dinner categories
+  {
+    id: "dinner-fasting",
+    mealTypeId: "dinner",
+    category: "fasting",
+    name: "እራት - ጾም",
+    normalPrice: 45,
+    supportedPrice: 35,
+    enabled: true,
+  },
+  {
+    id: "dinner-non-fasting",
+    mealTypeId: "dinner",
+    category: "non_fasting",
+    name: "እራት - የጾም",
+    normalPrice: 55,
+    supportedPrice: 45,
+    enabled: true,
+  },
+]
+
 // Get all meal types
 export const getMealTypes = async (): Promise<MealType[]> => {
-  // Simulate API delay
-  // return remoteAxiosInstance.get("/meals/types").then(response =>response.data).catch(err=> console.log(err));
-
   await new Promise((resolve) => setTimeout(resolve, 300))
-
   const storedMealTypes = localStorage.getItem("mealTypes")
-  return storedMealTypes ? JSON.parse(storedMealTypes) : Promise.all(DEFAULT_MEAL_TYPES)
+  return storedMealTypes ? JSON.parse(storedMealTypes) : DEFAULT_MEAL_TYPES
+}
+
+// Get all meal categories
+export const getMealCategories = async (): Promise<MealCategory[]> => {
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  const storedCategories = localStorage.getItem("mealCategories")
+  return storedCategories ? JSON.parse(storedCategories) : DEFAULT_MEAL_CATEGORIES
+}
+
+// Get enabled meal categories
+export const getEnabledMealCategories = async (): Promise<MealCategory[]> => {
+  const categories = await getMealCategories()
+  return categories.filter((category) => category.enabled)
+}
+
+// Get meal categories by meal type
+export const getMealCategoriesByType = async (mealTypeId: string): Promise<MealCategory[]> => {
+  const categories = await getMealCategories()
+  return categories.filter((category) => category.mealTypeId === mealTypeId && category.enabled)
+}
+
+// Get meal category by ID
+export const getMealCategoryById = async (id: string): Promise<MealCategory> => {
+  const categories = await getMealCategories()
+  console.log(categories)
+  const category = categories.find((cat) => cat.id === id)
+
+  if (!category) {
+    throw new Error(`Meal category with ID ${id} not found`)
+  }
+
+  return category
 }
 
 // Get enabled meal types
@@ -60,14 +145,67 @@ export const getMealTypeById = async (id: string): Promise<MealType> => {
   return mealType
 }
 
+// Add meal category
+export const addMealCategory = async (category: Omit<MealCategory, "id">): Promise<MealCategory> => {
+  await new Promise((resolve) => setTimeout(resolve, 500))
+
+  const categories = await getMealCategories()
+  const id = `${category.mealTypeId}-${category.category}-${Date.now()}`
+
+  const newCategory: MealCategory = {
+    ...category,
+    id,
+  }
+
+  categories.push(newCategory)
+  localStorage.setItem("mealCategories", JSON.stringify(categories))
+
+  return newCategory
+}
+
+// Update meal category
+export const updateMealCategory = async (id: string, updates: Partial<MealCategory>): Promise<MealCategory> => {
+  await new Promise((resolve) => setTimeout(resolve, 500))
+
+  const categories = await getMealCategories()
+  const index = categories.findIndex((cat) => cat.id === id)
+
+  if (index === -1) {
+    throw new Error(`Meal category with ID ${id} not found`)
+  }
+
+  const updatedCategory = {
+    ...categories[index],
+    ...updates,
+  }
+
+  categories[index] = updatedCategory
+  localStorage.setItem("mealCategories", JSON.stringify(categories))
+
+  return updatedCategory
+}
+
+// Delete meal category
+export const deleteMealCategory = async (id: string): Promise<void> => {
+  await new Promise((resolve) => setTimeout(resolve, 500))
+
+  const categories = await getMealCategories()
+  const filteredCategories = categories.filter((cat) => cat.id !== id)
+
+  localStorage.setItem("mealCategories", JSON.stringify(filteredCategories))
+}
+
+// Toggle meal category enabled status
+export const toggleMealCategoryEnabled = async (id: string): Promise<MealCategory> => {
+  const category = await getMealCategoryById(id)
+  return updateMealCategory(id, { enabled: !category.enabled })
+}
+
 // Add meal type
 export const addMealType = async (mealType: Omit<MealType, "id">): Promise<MealType> => {
-  // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 500))
 
   const mealTypes = await getMealTypes()
-
-  // Generate a unique ID
   const id = Date.now().toString()
 
   const newMealType: MealType = {
@@ -83,7 +221,6 @@ export const addMealType = async (mealType: Omit<MealType, "id">): Promise<MealT
 
 // Update meal type
 export const updateMealType = async (id: string, updates: Partial<MealType>): Promise<MealType> => {
-  // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 500))
 
   const mealTypes = await getMealTypes()
@@ -106,7 +243,6 @@ export const updateMealType = async (id: string, updates: Partial<MealType>): Pr
 
 // Delete meal type
 export const deleteMealType = async (id: string): Promise<void> => {
-  // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 500))
 
   const mealTypes = await getMealTypes()

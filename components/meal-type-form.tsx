@@ -21,7 +21,6 @@ interface MealTypeFormProps {
 
 export default function MealTypeForm({ open, onOpenChange, mealType, onSuccess }: MealTypeFormProps) {
   const [name, setName] = useState(mealType?.name || "")
-  const [price, setPrice] = useState(mealType?.price.toString() || "")
   const [icon, setIcon] = useState(mealType?.icon || "utensils")
   const [color, setColor] = useState(mealType?.color || "bg-emerald-100 text-emerald-700")
   const [loading, setLoading] = useState(false)
@@ -30,7 +29,7 @@ export default function MealTypeForm({ open, onOpenChange, mealType, onSuccess }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!name || !price) {
+    if (!name) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -42,17 +41,10 @@ export default function MealTypeForm({ open, onOpenChange, mealType, onSuccess }
     setLoading(true)
 
     try {
-      const priceValue = Number.parseFloat(price)
-
-      if (isNaN(priceValue) || priceValue <= 0) {
-        throw new Error("Price must be a positive number")
-      }
-
       if (mealType) {
         // Update existing meal type
         await updateMealType(mealType.id, {
           name,
-          price: priceValue,
           icon,
           color,
         })
@@ -64,7 +56,6 @@ export default function MealTypeForm({ open, onOpenChange, mealType, onSuccess }
         // Add new meal type
         await addMealType({
           name,
-          price: priceValue,
           icon,
           enabled: true,
           color,
@@ -104,20 +95,6 @@ export default function MealTypeForm({ open, onOpenChange, mealType, onSuccess }
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter meal name"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="price">Price (ETB)</Label>
-            <Input
-              id="price"
-              type="number"
-              step="0.01"
-              min="0"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="Enter price"
               required
             />
           </div>

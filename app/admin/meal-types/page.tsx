@@ -121,7 +121,7 @@ export default function MealTypesPage() {
   }
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">Meal Types</h1>
 
       <Card>
@@ -142,7 +142,6 @@ export default function MealTypesPage() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Icon</TableHead>
-                    <TableHead>Price</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -150,7 +149,7 @@ export default function MealTypesPage() {
                 <TableBody>
                   {mealTypes.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center">
+                      <TableCell colSpan={4} className="text-center">
                         No meal types found
                       </TableCell>
                     </TableRow>
@@ -164,7 +163,6 @@ export default function MealTypesPage() {
                           {mealType.name}
                         </TableCell>
                         <TableCell>{getMealIcon(mealType.icon)}</TableCell>
-                        <TableCell>{mealType.price.toFixed(2)} ETB</TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             <Switch checked={mealType.enabled} onCheckedChange={() => handleToggleMealType(mealType)} />
