@@ -18,13 +18,7 @@ const DEFAULT_MEAL_TYPES: MealType[] = [
     enabled: true,
     color: "bg-emerald-100 text-emerald-700",
   },
-  {
-    id: "dinner",
-    name: "እራት",
-    icon: "moon",
-    enabled: true,
-    color: "bg-indigo-100 text-indigo-700",
-  },
+ 
 ]
 
 // Default meal categories with fasting/non-fasting variants
@@ -43,7 +37,7 @@ const DEFAULT_MEAL_CATEGORIES: MealCategory[] = [
     id: "breakfast-non-fasting",
     mealTypeId: "breakfast",
     category: "non_fasting",
-    name: "ቁርስ - የጾም",
+    name: "ቁርስ - የፍስግ",
     normalPrice: 40,
     supportedPrice: 30,
     enabled: true,
@@ -62,30 +56,12 @@ const DEFAULT_MEAL_CATEGORIES: MealCategory[] = [
     id: "lunch-non-fasting",
     mealTypeId: "lunch",
     category: "non_fasting",
-    name: "ምሳ - የጾም",
+    name: "ምሳ - የፍስግ",
     normalPrice: 60,
     supportedPrice: 50,
     enabled: true,
   },
-  // Dinner categories
-  {
-    id: "dinner-fasting",
-    mealTypeId: "dinner",
-    category: "fasting",
-    name: "እራት - ጾም",
-    normalPrice: 45,
-    supportedPrice: 35,
-    enabled: true,
-  },
-  {
-    id: "dinner-non-fasting",
-    mealTypeId: "dinner",
-    category: "non_fasting",
-    name: "እራት - የጾም",
-    normalPrice: 55,
-    supportedPrice: 45,
-    enabled: true,
-  },
+
 ]
 
 // Get all meal types
