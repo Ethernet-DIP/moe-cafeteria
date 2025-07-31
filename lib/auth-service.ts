@@ -1,53 +1,7 @@
 "use client"
 
 import type { User, LoginCredentials } from "./types"
-
-// Demo users - in a real app, this would come from a database
-const DEMO_USERS: (User & { password: string })[] = [
-  {
-    id: "1",
-    username: "admin",
-    password: "admin123",
-    email: "admin@ministry.gov.et",
-    fullName: "አድሚን ተስፋዬ",
-    role: "admin",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    lastLogin: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    username: "manager",
-    password: "manager123",
-    email: "manager@ministry.gov.et",
-    fullName: "ማናጀር አበበ",
-    role: "manager",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    lastLogin: new Date().toISOString(),
-  },
-  {
-    id: "3",
-    username: "operator",
-    password: "operator123",
-    email: "operator@ministry.gov.et",
-    fullName: "ኦፐሬተር ሰላም",
-    role: "operator",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-]
-
-// Get all users
-const getUsers = (): (User & { password: string })[] => {
-  const storedUsers = localStorage.getItem("users")
-  return storedUsers ? JSON.parse(storedUsers) : DEMO_USERS
-}
-
-// Save users
-const saveUsers = (users: (User & { password: string })[]) => {
-  localStorage.setItem("users", JSON.stringify(users))
-}
+import { apiClient } from "./axiosInstance"
 
 // Get current user from session
 export const getCurrentUser = (): User | null => {
@@ -57,22 +11,85 @@ export const getCurrentUser = (): User | null => {
 
 // Login function
 export const login = async (credentials: LoginCredentials): Promise<User> => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 1000))
+  try {
+    // First, try to authenticate with the backend
+    const response = await apiClient.post("/auth/login", credentials)
+    const loginResponse = response.data
 
-  const users = getUsers()
-  console.log(users)
-  const user = users.find(
+    if (loginResponse.success && loginResponse.user) {
+      // Store user session (excluding password)
+      const { password, ...userSession } = loginResponse.user
+      localStorage.setItem("currentUser", JSON.stringify(userSession))
+      
+      // Update the axios instance to include authentication for future requests
+      const auth = btoa(`${credentials.username}:${credentials.password}`)
+      apiClient.defaults.headers.common['Authorization'] = `Basic ${auth}`
+      
+      return userSession
+    } else {
+      throw new Error(loginResponse.message || "Login failed")
+    }
+  } catch (error: any) {
+    console.error("Login error:", error)
+    
+    // Fallback to local authentication if backend is not available
+    if (error.code === 'ERR_NETWORK' || error.response?.status >= 500) {
+      console.warn("Backend unavailable, falling back to local authentication")
+      return await localLogin(credentials)
+    }
+    
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message)
+    }
+    throw new Error("Login failed")
+  }
+}
+
+// Local login fallback
+const localLogin = async (credentials: LoginCredentials): Promise<User> => {
+  // Demo users for fallback
+  const DEMO_USERS: (User & { password: string })[] = [
+    {
+      id: "1",
+      username: "admin",
+      password: "admin123",
+      email: "admin@ministry.gov.et",
+      fullName: "አድሚን ተስፋዬ",
+      role: "admin",
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString(),
+    },
+    {
+      id: "2",
+      username: "manager",
+      password: "manager123",
+      email: "manager@ministry.gov.et",
+      fullName: "ማናጀር አበበ",
+      role: "manager",
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString(),
+    },
+    {
+      id: "3",
+      username: "operator",
+      password: "operator123",
+      email: "operator@ministry.gov.et",
+      fullName: "ኦፐሬተር ሰላም",
+      role: "operator",
+      isActive: true,
+      createdAt: new Date().toISOString(),
+    },
+  ]
+
+  const user = DEMO_USERS.find(
     (u) => u.username === credentials.username && u.password === credentials.password && u.isActive,
   )
 
   if (!user) {
     throw new Error("Invalid username or password")
   }
-
-  // Update last login
-  user.lastLogin = new Date().toISOString()
-  saveUsers(users)
 
   // Store user session (excluding password)
   const { password, ...userSession } = user
@@ -83,10 +100,18 @@ export const login = async (credentials: LoginCredentials): Promise<User> => {
 
 // Logout function
 export const logout = async (): Promise<void> => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
+  try {
+    // Try to logout from backend
+    await apiClient.post("/auth/logout")
+  } catch (error) {
+    console.warn("Backend logout failed, continuing with local logout")
+  }
+  
+  // Always clear local session
   localStorage.removeItem("currentUser")
+  
+  // Clear authentication header
+  delete apiClient.defaults.headers.common['Authorization']
 }
 
 // Check if user is authenticated
@@ -99,132 +124,91 @@ export const hasRole = (requiredRole: string): boolean => {
   const user = getCurrentUser()
   if (!user) return false
 
+  // Normalize roles to lowercase for comparison
+  const userRole = user.role?.toLowerCase() || ""
+  const normalizedRequiredRole = requiredRole.toLowerCase()
+
+  console.log("hasRole - User role:", user.role)
+  console.log("hasRole - Normalized user role:", userRole)
+  console.log("hasRole - Required role:", requiredRole)
+  console.log("hasRole - Normalized required role:", normalizedRequiredRole)
+
   const roleHierarchy = { admin: 3, manager: 2, operator: 1 }
-  const userLevel = roleHierarchy[user.role as keyof typeof roleHierarchy] || 0
-  const requiredLevel = roleHierarchy[requiredRole as keyof typeof roleHierarchy] || 0
+  const userLevel = roleHierarchy[userRole as keyof typeof roleHierarchy] || 0
+  const requiredLevel = roleHierarchy[normalizedRequiredRole as keyof typeof roleHierarchy] || 0
+
+  console.log("hasRole - User level:", userLevel)
+  console.log("hasRole - Required level:", requiredLevel)
+  console.log("hasRole - Result:", userLevel >= requiredLevel)
 
   return userLevel >= requiredLevel
 }
 
 // Get all users (admin only)
 export const getAllUsers = async (): Promise<User[]> => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  if (!hasRole("admin")) {
-    throw new Error("Unauthorized")
+  try {
+    const response = await apiClient.get("/users")
+    return response.data
+  } catch (error: any) {
+    console.error("Error fetching users:", error)
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message)
+    }
+    throw new Error("Failed to fetch users")
   }
-
-  const users = getUsers()
-  return users.map(({ password, ...user }) => user)
 }
 
 // Create user
 export const createUser = async (userData: Omit<User, "id" | "createdAt"> & { password: string }): Promise<User> => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  if (!hasRole("admin")) {
-    throw new Error("Unauthorized")
+  try {
+    const response = await apiClient.post("/users", userData)
+    return response.data
+  } catch (error: any) {
+    console.error("Error creating user:", error)
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message)
+    }
+    throw new Error("Failed to create user")
   }
-
-  const users = getUsers()
-
-  // Check if username already exists
-  if (users.some((u) => u.username === userData.username)) {
-    throw new Error("Username already exists")
-  }
-
-  // Check if email already exists
-  if (users.some((u) => u.email === userData.email)) {
-    throw new Error("Email already exists")
-  }
-
-  const newUser = {
-    ...userData,
-    id: Date.now().toString(),
-    createdAt: new Date().toISOString(),
-  }
-
-  users.push(newUser)
-  saveUsers(users)
-
-  const { password, ...userResponse } = newUser
-  return userResponse
 }
 
 // Update user
 export const updateUser = async (id: string, updates: Partial<User & { password?: string }>): Promise<User> => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  if (!hasRole("admin")) {
-    throw new Error("Unauthorized")
+  try {
+    const response = await apiClient.put(`/users/${id}`, updates)
+    return response.data
+  } catch (error: any) {
+    console.error("Error updating user:", error)
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message)
+    }
+    throw new Error("Failed to update user")
   }
-
-  const users = getUsers()
-  const userIndex = users.findIndex((u) => u.id === id)
-
-  if (userIndex === -1) {
-    throw new Error("User not found")
-  }
-
-  // Check if username already exists (excluding current user)
-  if (updates.username && users.some((u) => u.id !== id && u.username === updates.username)) {
-    throw new Error("Username already exists")
-  }
-
-  // Check if email already exists (excluding current user)
-  if (updates.email && users.some((u) => u.id !== id && u.email === updates.email)) {
-    throw new Error("Email already exists")
-  }
-
-  const updatedUser = { ...users[userIndex], ...updates }
-  users[userIndex] = updatedUser
-  saveUsers(users)
-
-  const { password, ...userResponse } = updatedUser
-  return userResponse
 }
 
 // Delete user
 export const deleteUser = async (id: string): Promise<void> => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  if (!hasRole("admin")) {
-    throw new Error("Unauthorized")
+  try {
+    await apiClient.delete(`/users/${id}`)
+  } catch (error: any) {
+    console.error("Error deleting user:", error)
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message)
+    }
+    throw new Error("Failed to delete user")
   }
-
-  const users = getUsers()
-  const filteredUsers = users.filter((u) => u.id !== id)
-
-  if (filteredUsers.length === users.length) {
-    throw new Error("User not found")
-  }
-
-  saveUsers(filteredUsers)
 }
 
 // Toggle user active status
 export const toggleUserStatus = async (id: string): Promise<User> => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  if (!hasRole("admin")) {
-    throw new Error("Unauthorized")
+  try {
+    const response = await apiClient.patch(`/users/${id}/toggle`)
+    return response.data
+  } catch (error: any) {
+    console.error("Error toggling user status:", error)
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message)
+    }
+    throw new Error("Failed to toggle user status")
   }
-
-  const users = getUsers()
-  const userIndex = users.findIndex((u) => u.id === id)
-
-  if (userIndex === -1) {
-    throw new Error("User not found")
-  }
-
-  users[userIndex].isActive = !users[userIndex].isActive
-  saveUsers(users)
-
-  const { password, ...userResponse } = users[userIndex]
-  return userResponse
 }

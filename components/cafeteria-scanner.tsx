@@ -150,18 +150,29 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
         setError(`${emp.name} has already used their ${mealCategory.name} allowance today.`)
         errorAudioRef.current?.play()
       } else {
-        await recordMeal(emp.cardId, mealCategoryId)
-        setSuccess(true)
-        successAudioRef.current?.play()
+        try {
+          await recordMeal(emp.cardId, mealCategoryId)
+          setSuccess(true)
+          successAudioRef.current?.play()
+        } catch (mealError: any) {
+          // Handle meal recording specific errors
+          setError(mealError.message || "Failed to record meal")
+          errorAudioRef.current?.play()
+        }
       }
-    } catch (err) {
-      setError("Employee not found with this card or code.")
+    } catch (err: any) {
+      // Handle employee lookup and other errors
+      if (err.message && err.message.includes("Employee has already used")) {
+        setError(err.message)
+      } else {
+        setError("Employee not found with this card or code.")
+      }
       errorAudioRef.current?.play()
     } finally {
       setProcessing(false)
       setInputValue("")
 
-      // Clear results after 3 seconds
+      // Clear results after 10 seconds
       setTimeout(() => {
         setEmployee(null)
         setPricing(null)
@@ -247,11 +258,8 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
               </div>
 
               <div className="text-center">
-                <h2 className="text-2xl font-bold">{employee.name}</h2>
-                <p className="text-gray-500">{employee.department}</p>
-                <p className="text-sm text-gray-400">ID: {employee.employeeId}</p>
-                <p className="text-sm text-gray-400">Code: {employee.shortCode}</p>
-                {employee.salary && <p className="text-sm text-gray-400">Salary: {employee.salary.toFixed(2)} ETB</p>}
+                <h2 className="text-2xl font-bold">{employee.name} - {employee.department}</h2>
+                <p className="text-sm text-gray-400">ID: {employee.employeeId} - Code: {employee.shortCode}</p>
                 <div className="flex items-center justify-center gap-2 mt-2">
                   <div
                     className={`px-2 py-1 rounded-full text-xs font-medium ${

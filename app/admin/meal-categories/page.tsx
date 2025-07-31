@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Plus, Pencil, Trash2, AlertTriangle, CheckCircle, XCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { getMealCategories, getMealTypes, toggleMealCategoryEnabled, deleteMealCategory } from "@/lib/meal-service"
+import { getMealCategories, getMealTypes, toggleMealCategoryActive, deleteMealCategory } from "@/lib/meal-service"
 import type { MealCategory, MealType } from "@/lib/types"
 import MealCategoryForm from "@/components/meal-category-form"
 import { useToast } from "@/components/ui/use-toast"
@@ -94,10 +94,10 @@ export default function MealCategoriesPage() {
 
   const handleToggleCategory = async (category: MealCategory) => {
     try {
-      await toggleMealCategoryEnabled(category.id)
+      await toggleMealCategoryActive(category.id)
       toast({
         title: "Success",
-        description: `Meal category ${category.enabled ? "disabled" : "enabled"} successfully`,
+        description: `Meal category ${category.isActive ? "disabled" : "enabled"} successfully`,
       })
       fetchData()
     } catch (error) {
@@ -175,14 +175,14 @@ export default function MealCategoriesPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
-                            <Switch checked={category.enabled} onCheckedChange={() => handleToggleCategory(category)} />
+                            <Switch checked={category.isActive} onCheckedChange={() => handleToggleCategory(category)} />
                             <span className="flex items-center">
-                              {category.enabled ? (
+                              {category.isActive ? (
                                 <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
                               ) : (
                                 <XCircle className="h-4 w-4 text-red-500 mr-1" />
                               )}
-                              {category.enabled ? "Enabled" : "Disabled"}
+                              {category.isActive ? "Enabled" : "Disabled"}
                             </span>
                           </div>
                         </TableCell>

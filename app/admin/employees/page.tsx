@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Eye, Search, Filter, X, CreditCard, CheckCircle, XCircle, Pencil } from "lucide-react"
+import { Eye, Search, Filter, X, CreditCard, CheckCircle, XCircle, Pencil, Plus } from "lucide-react"
 import { getAllEmployees, toggleEmployeeStatus } from "@/lib/employee-service"
 import type { Employee } from "@/lib/types"
 import EmployeeUsageModal from "@/components/employee-usage-modal"
 import EmployeeAssignmentModal from "@/components/employee-assignment-modal"
 import EmployeeEditModal from "@/components/employee-edit-modal" // Import the new modal
+import EmployeeAddModal from "@/components/employee-add-modal"
 import Pagination from "@/components/pagination"
 import { useToast } from "@/components/ui/use-toast"
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +24,8 @@ export default function EmployeesPage() {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
   const [usageModalOpen, setUsageModalOpen] = useState(false)
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false)
-  const [editModalOpen, setEditModalOpen] = useState(false) // State for edit modal
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [addModalOpen, setAddModalOpen] = useState(false)
   const { toast } = useToast()
 
   // Filter and search states
@@ -210,17 +212,26 @@ export default function EmployeesPage() {
           <div className="flex flex-col gap-4">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <CardTitle>Employee Directory ({filteredAndSortedEmployees.length} employees)</CardTitle>
-              {hasActiveFilters && (
+              <div className="flex items-center gap-2">
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="flex items-center gap-2 bg-transparent"
+                  onClick={() => setAddModalOpen(true)}
+                  className="flex items-center gap-2"
                 >
-                  <X className="h-4 w-4" />
-                  Clear Filters
+                  <Plus className="h-4 w-4" />
+                  Add Employee
                 </Button>
-              )}
+                {hasActiveFilters && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 bg-transparent"
+                  >
+                    <X className="h-4 w-4" />
+                    Clear Filters
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Search and Filters */}
@@ -450,6 +461,12 @@ export default function EmployeesPage() {
         employee={selectedEmployee}
         open={editModalOpen}
         onOpenChange={setEditModalOpen}
+        onSuccess={fetchData}
+      />
+
+      <EmployeeAddModal
+        open={addModalOpen}
+        onOpenChange={setAddModalOpen}
         onSuccess={fetchData}
       />
     </div>

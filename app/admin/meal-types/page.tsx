@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Plus, Pencil, Trash2, AlertTriangle, CheckCircle, XCircle } from "lucide-react"
-import { getMealTypes, toggleMealTypeEnabled, deleteMealType } from "@/lib/meal-service"
+import { getMealTypes, toggleMealTypeActive, deleteMealType } from "@/lib/meal-service"
 import type { MealType } from "@/lib/types"
 import MealTypeForm from "@/components/meal-type-form"
 import { useToast } from "@/components/ui/use-toast"
@@ -91,10 +91,10 @@ export default function MealTypesPage() {
 
   const handleToggleMealType = async (mealType: MealType) => {
     try {
-      await toggleMealTypeEnabled(mealType.id)
+      await toggleMealTypeActive(mealType.id)
       toast({
         title: "Success",
-        description: `Meal type ${mealType.enabled ? "disabled" : "enabled"} successfully`,
+        description: `Meal type ${mealType.isActive ? "disabled" : "enabled"} successfully`,
       })
       fetchData()
     } catch (error) {
@@ -165,14 +165,14 @@ export default function MealTypesPage() {
                         <TableCell>{getMealIcon(mealType.icon)}</TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
-                            <Switch checked={mealType.enabled} onCheckedChange={() => handleToggleMealType(mealType)} />
+                            <Switch checked={mealType.isActive} onCheckedChange={() => handleToggleMealType(mealType)} />
                             <span className="flex items-center">
-                              {mealType.enabled ? (
+                              {mealType.isActive ? (
                                 <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
                               ) : (
                                 <XCircle className="h-4 w-4 text-red-500 mr-1" />
                               )}
-                              {mealType.enabled ? "Enabled" : "Disabled"}
+                              {mealType.isActive ? "Enabled" : "Disabled"}
                             </span>
                           </div>
                         </TableCell>

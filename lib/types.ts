@@ -2,7 +2,7 @@ export interface MealType {
   id: string
   name: string
   icon: string
-  enabled: boolean
+  isActive: boolean
   color: string
 }
 
@@ -13,7 +13,7 @@ export interface MealCategory {
   name: string
   normalPrice: number
   supportedPrice: number
-  enabled: boolean
+  isActive: boolean
 }
 
 export interface Employee {

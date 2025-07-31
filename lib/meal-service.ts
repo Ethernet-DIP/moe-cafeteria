@@ -1,234 +1,167 @@
 "use client"
 
 import type { MealType, MealCategory } from "./types"
-
-// Default meal types
-const DEFAULT_MEAL_TYPES: MealType[] = [
-  {
-    id: "breakfast",
-    name: "ቁርስ",
-    icon: "coffee",
-    enabled: true,
-    color: "bg-amber-100 text-amber-700",
-  },
-  {
-    id: "lunch",
-    name: "ምሳ",
-    icon: "utensils",
-    enabled: true,
-    color: "bg-emerald-100 text-emerald-700",
-  },
- 
-]
-
-// Default meal categories with fasting/non-fasting variants
-const DEFAULT_MEAL_CATEGORIES: MealCategory[] = [
-  // Breakfast categories
-  {
-    id: "breakfast-fasting",
-    mealTypeId: "breakfast",
-    category: "fasting",
-    name: "ቁርስ - ጾም",
-    normalPrice: 30,
-    supportedPrice: 20,
-    enabled: true,
-  },
-  {
-    id: "breakfast-non-fasting",
-    mealTypeId: "breakfast",
-    category: "non_fasting",
-    name: "ቁርስ - የፍስግ",
-    normalPrice: 40,
-    supportedPrice: 30,
-    enabled: true,
-  },
-  // Lunch categories
-  {
-    id: "lunch-fasting",
-    mealTypeId: "lunch",
-    category: "fasting",
-    name: "ምሳ - ጾም",
-    normalPrice: 50,
-    supportedPrice: 40,
-    enabled: true,
-  },
-  {
-    id: "lunch-non-fasting",
-    mealTypeId: "lunch",
-    category: "non_fasting",
-    name: "ምሳ - የፍስግ",
-    normalPrice: 60,
-    supportedPrice: 50,
-    enabled: true,
-  },
-
-]
+import { apiClient } from "./axiosInstance"
 
 // Get all meal types
 export const getMealTypes = async (): Promise<MealType[]> => {
-  await new Promise((resolve) => setTimeout(resolve, 300))
-  const storedMealTypes = localStorage.getItem("mealTypes")
-  return storedMealTypes ? JSON.parse(storedMealTypes) : DEFAULT_MEAL_TYPES
+  try {
+    const response = await apiClient.get("/meal-types")
+    return response.data
+  } catch (error) {
+    console.error("Error fetching meal types:", error)
+    throw new Error("Failed to fetch meal types")
+  }
 }
 
 // Get all meal categories
 export const getMealCategories = async (): Promise<MealCategory[]> => {
-  await new Promise((resolve) => setTimeout(resolve, 300))
-  const storedCategories = localStorage.getItem("mealCategories")
-  return storedCategories ? JSON.parse(storedCategories) : DEFAULT_MEAL_CATEGORIES
+  try {
+    const response = await apiClient.get("/meal-categories")
+    return response.data
+  } catch (error) {
+    console.error("Error fetching meal categories:", error)
+    throw new Error("Failed to fetch meal categories")
+  }
 }
 
-// Get enabled meal categories
-export const getEnabledMealCategories = async (): Promise<MealCategory[]> => {
-  const categories = await getMealCategories()
-  return categories.filter((category) => category.enabled)
+// Get active meal categories
+export const getActiveMealCategories = async (): Promise<MealCategory[]> => {
+  try {
+    const response = await apiClient.get("/meal-categories/active")
+    return response.data
+  } catch (error) {
+    console.error("Error fetching active meal categories:", error)
+    throw new Error("Failed to fetch active meal categories")
+  }
 }
 
 // Get meal categories by meal type
 export const getMealCategoriesByType = async (mealTypeId: string): Promise<MealCategory[]> => {
-  const categories = await getMealCategories()
-  return categories.filter((category) => category.mealTypeId === mealTypeId && category.enabled)
+  try {
+    const response = await apiClient.get(`/meal-categories/by-type/${mealTypeId}`)
+    return response.data
+  } catch (error) {
+    console.error("Error fetching meal categories by type:", error)
+    throw new Error("Failed to fetch meal categories by type")
+  }
 }
 
 // Get meal category by ID
 export const getMealCategoryById = async (id: string): Promise<MealCategory> => {
-  const categories = await getMealCategories()
-  console.log(categories)
-  const category = categories.find((cat) => cat.id === id)
-
-  if (!category) {
+  try {
+    const response = await apiClient.get(`/meal-categories/${id}`)
+    return response.data
+  } catch (error) {
+    console.error("Error fetching meal category:", error)
     throw new Error(`Meal category with ID ${id} not found`)
   }
-
-  return category
 }
 
-// Get enabled meal types
-export const getEnabledMealTypes = async (): Promise<MealType[]> => {
-  const mealTypes = await getMealTypes()
-  return mealTypes.filter((mealType) => mealType.enabled)
+// Get active meal types
+export const getActiveMealTypes = async (): Promise<MealType[]> => {
+  try {
+    const response = await apiClient.get("/meal-types/active")
+    return response.data
+  } catch (error) {
+    console.error("Error fetching active meal types:", error)
+    throw new Error("Failed to fetch active meal types")
+  }
 }
 
 // Get meal type by ID
 export const getMealTypeById = async (id: string): Promise<MealType> => {
-  const mealTypes = await getMealTypes()
-  const mealType = mealTypes.find((mt) => mt.id === id)
-
-  if (!mealType) {
+  try {
+    const response = await apiClient.get(`/meal-types/${id}`)
+    return response.data
+  } catch (error) {
+    console.error("Error fetching meal type:", error)
     throw new Error(`Meal type with ID ${id} not found`)
   }
-
-  return mealType
 }
 
 // Add meal category
 export const addMealCategory = async (category: Omit<MealCategory, "id">): Promise<MealCategory> => {
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  const categories = await getMealCategories()
-  const id = `${category.mealTypeId}-${category.category}-${Date.now()}`
-
-  const newCategory: MealCategory = {
-    ...category,
-    id,
+  try {
+    const response = await apiClient.post("/meal-categories", category)
+    return response.data
+  } catch (error) {
+    console.error("Error adding meal category:", error)
+    throw new Error("Failed to add meal category")
   }
-
-  categories.push(newCategory)
-  localStorage.setItem("mealCategories", JSON.stringify(categories))
-
-  return newCategory
 }
 
 // Update meal category
 export const updateMealCategory = async (id: string, updates: Partial<MealCategory>): Promise<MealCategory> => {
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  const categories = await getMealCategories()
-  const index = categories.findIndex((cat) => cat.id === id)
-
-  if (index === -1) {
-    throw new Error(`Meal category with ID ${id} not found`)
+  try {
+    const response = await apiClient.put(`/meal-categories/${id}`, updates)
+    return response.data
+  } catch (error) {
+    console.error("Error updating meal category:", error)
+    throw new Error("Failed to update meal category")
   }
-
-  const updatedCategory = {
-    ...categories[index],
-    ...updates,
-  }
-
-  categories[index] = updatedCategory
-  localStorage.setItem("mealCategories", JSON.stringify(categories))
-
-  return updatedCategory
 }
 
 // Delete meal category
 export const deleteMealCategory = async (id: string): Promise<void> => {
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  const categories = await getMealCategories()
-  const filteredCategories = categories.filter((cat) => cat.id !== id)
-
-  localStorage.setItem("mealCategories", JSON.stringify(filteredCategories))
+  try {
+    await apiClient.delete(`/meal-categories/${id}`)
+  } catch (error) {
+    console.error("Error deleting meal category:", error)
+    throw new Error("Failed to delete meal category")
+  }
 }
 
-// Toggle meal category enabled status
-export const toggleMealCategoryEnabled = async (id: string): Promise<MealCategory> => {
-  const category = await getMealCategoryById(id)
-  return updateMealCategory(id, { enabled: !category.enabled })
+// Toggle meal category active status
+export const toggleMealCategoryActive = async (id: string): Promise<MealCategory> => {
+  try {
+    const response = await apiClient.patch(`/meal-categories/${id}/toggle`)
+    return response.data
+  } catch (error) {
+    console.error("Error toggling meal category status:", error)
+    throw new Error("Failed to toggle meal category status")
+  }
 }
 
 // Add meal type
 export const addMealType = async (mealType: Omit<MealType, "id">): Promise<MealType> => {
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  const mealTypes = await getMealTypes()
-  const id = Date.now().toString()
-
-  const newMealType: MealType = {
-    ...mealType,
-    id,
+  try {
+    const response = await apiClient.post("/meal-types", mealType)
+    return response.data
+  } catch (error) {
+    console.error("Error adding meal type:", error)
+    throw new Error("Failed to add meal type")
   }
-
-  mealTypes.push(newMealType)
-  localStorage.setItem("mealTypes", JSON.stringify(mealTypes))
-
-  return newMealType
 }
 
 // Update meal type
 export const updateMealType = async (id: string, updates: Partial<MealType>): Promise<MealType> => {
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  const mealTypes = await getMealTypes()
-  const index = mealTypes.findIndex((mt) => mt.id === id)
-
-  if (index === -1) {
-    throw new Error(`Meal type with ID ${id} not found`)
+  try {
+    const response = await apiClient.put(`/meal-types/${id}`, updates)
+    return response.data
+  } catch (error) {
+    console.error("Error updating meal type:", error)
+    throw new Error("Failed to update meal type")
   }
-
-  const updatedMealType = {
-    ...mealTypes[index],
-    ...updates,
-  }
-
-  mealTypes[index] = updatedMealType
-  localStorage.setItem("mealTypes", JSON.stringify(mealTypes))
-
-  return updatedMealType
 }
 
 // Delete meal type
 export const deleteMealType = async (id: string): Promise<void> => {
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  const mealTypes = await getMealTypes()
-  const filteredMealTypes = mealTypes.filter((mt) => mt.id !== id)
-
-  localStorage.setItem("mealTypes", JSON.stringify(filteredMealTypes))
+  try {
+    await apiClient.delete(`/meal-types/${id}`)
+  } catch (error) {
+    console.error("Error deleting meal type:", error)
+    throw new Error("Failed to delete meal type")
+  }
 }
 
-// Toggle meal type enabled status
-export const toggleMealTypeEnabled = async (id: string): Promise<MealType> => {
-  const mealType = await getMealTypeById(id)
-  return updateMealType(id, { enabled: !mealType.enabled })
+// Toggle meal type active status
+export const toggleMealTypeActive = async (id: string): Promise<MealType> => {
+  try {
+    const response = await apiClient.patch(`/meal-types/${id}/toggle`)
+    return response.data
+  } catch (error) {
+    console.error("Error toggling meal type status:", error)
+    throw new Error("Failed to toggle meal type status")
+  }
 }

@@ -57,7 +57,7 @@ export default function MealTypeForm({ open, onOpenChange, mealType, onSuccess }
         await addMealType({
           name,
           icon,
-          enabled: true,
+          isActive: true,
           color,
         })
         toast({

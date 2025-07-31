@@ -85,7 +85,7 @@ export default function MealCategoryForm({
           category: categoryType,
           normalPrice: normalPriceValue,
           supportedPrice: supportedPriceValue,
-          enabled: true,
+          isActive: true,
         })
         toast({
           title: "Success",
