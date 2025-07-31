@@ -1,4 +1,5 @@
 import axios from "axios";
+import { restoreAuth } from "./auth-service";
 
 // Create axios instance for the MOE Cafeteria Backend API
 export const apiClient = axios.create({
@@ -8,6 +9,16 @@ export const apiClient = axios.create({
   },
   timeout: 10000, // 10 seconds timeout
 });
+
+// Initialize authentication from stored credentials
+export const initializeAuth = () => {
+  restoreAuth();
+};
+
+// Initialize auth on module load
+if (typeof window !== 'undefined') {
+  initializeAuth();
+}
 
 // Response interceptor to handle errors
 apiClient.interceptors.response.use(

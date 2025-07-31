@@ -45,6 +45,11 @@ export interface MealRecord {
   supportAmount: number
   employeeSalary?: number
   timestamp: string
+  createdAt: string
+  // User information
+  recordedByUserId?: string
+  recordedByUsername?: string
+  recordedByFullName?: string
 }
 
 export interface EmployeeUsageStats {

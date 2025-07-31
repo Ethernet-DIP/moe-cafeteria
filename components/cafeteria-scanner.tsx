@@ -172,13 +172,13 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
       setProcessing(false)
       setInputValue("")
 
-      // Clear results after 10 seconds
-      setTimeout(() => {
-        setEmployee(null)
-        setPricing(null)
-        setError(null)
-        setSuccess(false)
-      }, 10000)
+      // Clear results after 10 seconds - REMOVED
+      // setTimeout(() => {
+      //   setEmployee(null)
+      //   setPricing(null)
+      //   setError(null)
+      //   setSuccess(false)
+      // }, 10000)
     }
   }
 

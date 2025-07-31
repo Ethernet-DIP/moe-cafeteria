@@ -21,6 +21,12 @@ export const login = async (credentials: LoginCredentials): Promise<User> => {
       const { password, ...userSession } = loginResponse.user
       localStorage.setItem("currentUser", JSON.stringify(userSession))
       
+      // Store credentials for future requests (in a real app, use a more secure method)
+      localStorage.setItem("authCredentials", JSON.stringify({
+        username: credentials.username,
+        password: credentials.password
+      }))
+      
       // Update the axios instance to include authentication for future requests
       const auth = btoa(`${credentials.username}:${credentials.password}`)
       apiClient.defaults.headers.common['Authorization'] = `Basic ${auth}`
@@ -109,9 +115,28 @@ export const logout = async (): Promise<void> => {
   
   // Always clear local session
   localStorage.removeItem("currentUser")
+  localStorage.removeItem("authCredentials")
   
   // Clear authentication header
   delete apiClient.defaults.headers.common['Authorization']
+}
+
+// Restore authentication from stored credentials
+export const restoreAuth = (): boolean => {
+  try {
+    const authCredentials = localStorage.getItem("authCredentials")
+    const currentUser = localStorage.getItem("currentUser")
+    
+    if (authCredentials && currentUser) {
+      const credentials = JSON.parse(authCredentials)
+      const auth = btoa(`${credentials.username}:${credentials.password}`)
+      apiClient.defaults.headers.common['Authorization'] = `Basic ${auth}`
+      return true
+    }
+  } catch (error) {
+    console.error("Error restoring auth:", error)
+  }
+  return false
 }
 
 // Check if user is authenticated

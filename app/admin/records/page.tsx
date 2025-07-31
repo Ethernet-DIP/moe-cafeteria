@@ -358,13 +358,14 @@ export default function MealRecordsPage() {
                       <TableHead>Price Paid</TableHead>
                       <TableHead>Subsidy</TableHead>
                       <TableHead>Time</TableHead>
+                      <TableHead>Recorded By</TableHead>
                       <TableHead className="w-[50px]"></TableHead> {/* Actions column */}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginatedRecords.length === 0 ? (
                       <TableRow suppressHydrationWarning>
-                        <TableCell colSpan={8} className="text-center py-8">
+                        <TableCell colSpan={9} className="text-center py-8">
                           {filteredAndSortedRecords.length === 0 ? "No meal records found" : "No records on this page"}
                         </TableCell>
                       </TableRow>
@@ -381,11 +382,26 @@ export default function MealRecordsPage() {
                               {mealType ? getMealIcon(mealType.icon) : null}
                               <span className="ml-2">{record.mealName}</span>
                             </TableCell>
-                            <TableCell>{record.category === "fasting" ? "Fasting" : "Non-Fasting"}</TableCell>
-                            <TableCell className="font-medium">{record.actualPrice.toFixed(2)} ETB</TableCell>
-                            <TableCell className="font-medium">{record.supportAmount.toFixed(2)} ETB</TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
+                            <TableCell>
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  record.category === "fasting" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
+                                }`}
+                              >
+                                {record.category === "fasting" ? "Fasting" : "Non-Fasting"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="font-mono">
+                              {record.actualPrice.toFixed(2)} ETB
+                            </TableCell>
+                            <TableCell className="font-mono">
+                              {record.supportAmount > 0 ? `${record.supportAmount.toFixed(2)} ETB` : "-"}
+                            </TableCell>
+                            <TableCell className="text-sm text-gray-500">
                               {formatDate(record.timestamp)}
+                            </TableCell>
+                            <TableCell className="text-sm text-gray-500">
+                              {record.recordedByFullName || record.recordedByUsername || "System"}
                             </TableCell>
                             <TableCell>
                               <DropdownMenu>
