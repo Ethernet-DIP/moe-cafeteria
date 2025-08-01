@@ -359,7 +359,7 @@ export default function MealRecordsPage() {
                       <TableHead>Subsidy</TableHead>
                       <TableHead>Time</TableHead>
                       <TableHead>Recorded By</TableHead>
-                      <TableHead className="w-[50px]"></TableHead> {/* Actions column */}
+                      <TableHead className="w-[50px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -378,9 +378,11 @@ export default function MealRecordsPage() {
                           <TableRow key={record.id} suppressHydrationWarning>
                             <TableCell className="font-medium">{record.employeeId}</TableCell>
                             <TableCell>{employee?.name || "Unknown"}</TableCell>
-                            <TableCell className="flex items-center">
-                              {mealType ? getMealIcon(mealType.icon) : null}
-                              <span className="ml-2">{record.mealName}</span>
+                            <TableCell>
+                              <div className="flex items-center">
+                                {mealType ? getMealIcon(mealType.icon) : null}
+                                <span className="ml-2">{record.mealName}</span>
+                              </div>
                             </TableCell>
                             <TableCell>
                               <span

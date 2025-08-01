@@ -7,69 +7,61 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { TrendingDown, Users, DollarSign, PieChart, Download, Utensils } from "lucide-react"
 import type { SupportSummary, DepartmentSupportAnalysis } from "@/lib/types"
-
-// Mock data - in real app this would come from API
-const mockSupportSummary: SupportSummary = {
-  totalMeals: 1250,
-  supportedMeals: 450,
-  normalMeals: 800,
-  totalRevenue: 52500,
-  totalSubsidy: 6750,
-  potentialRevenue: 59250,
-  supportedEmployees: 85,
-  totalEmployees: 200,
-  supportPercentage: 36,
-}
-
-const mockDepartmentAnalysis: DepartmentSupportAnalysis[] = [
-  {
-    department: "IT Department",
-    totalEmployees: 25,
-    eligibleEmployees: 8,
-    employeesUsingSupport: 6,
-    totalMeals: 180,
-    supportedMeals: 45,
-    totalRevenue: 8250,
-    totalSubsidy: 675,
-    avgDepartmentSalary: 6500,
-    eligibilityPercentage: 32,
-  },
-  {
-    department: "HR Department",
-    totalEmployees: 15,
-    eligibleEmployees: 12,
-    employeesUsingSupport: 10,
-    totalMeals: 120,
-    supportedMeals: 85,
-    totalRevenue: 4800,
-    totalSubsidy: 1275,
-    avgDepartmentSalary: 3800,
-    eligibilityPercentage: 80,
-  },
-  {
-    department: "Finance Department",
-    totalEmployees: 20,
-    eligibleEmployees: 5,
-    employeesUsingSupport: 4,
-    totalMeals: 150,
-    supportedMeals: 30,
-    totalRevenue: 7200,
-    totalSubsidy: 450,
-    avgDepartmentSalary: 7200,
-    eligibilityPercentage: 25,
-  },
-]
+import { getSupportSummary, getDepartmentAnalysis, getPaginatedDepartmentAnalysis, type PaginatedDepartmentAnalysis } from "@/lib/support-report-service"
+import { toast } from "@/hooks/use-toast"
+import Pagination from "@/components/pagination"
 
 export default function SupportReportsPage() {
   const [loading, setLoading] = useState(true)
   const [selectedPeriod, setSelectedPeriod] = useState("monthly")
-  const [supportSummary, setSupportSummary] = useState<SupportSummary>(mockSupportSummary)
-  const [departmentAnalysis, setDepartmentAnalysis] = useState<DepartmentSupportAnalysis[]>(mockDepartmentAnalysis)
+  const [supportSummary, setSupportSummary] = useState<SupportSummary | null>(null)
+  const [departmentAnalysis, setDepartmentAnalysis] = useState<DepartmentSupportAnalysis[]>([])
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+
+  const fetchData = async (period: string, page: number = 0, size: number = 10) => {
+    setLoading(true)
+    try {
+      const [summary, paginatedAnalysis] = await Promise.all([
+        getSupportSummary(period),
+        getPaginatedDepartmentAnalysis(period, page, size)
+      ])
+      setSupportSummary(summary)
+      setDepartmentAnalysis(paginatedAnalysis.content)
+      setTotalPages(paginatedAnalysis.totalPages)
+      setTotalElements(paginatedAnalysis.totalElements)
+      setCurrentPage(paginatedAnalysis.currentPage)
+      setPageSize(paginatedAnalysis.pageSize)
+    } catch (error) {
+      console.error("Error fetching support reports:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load support reports. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => setLoading(false), 1000)
-  }, [])
+    fetchData(selectedPeriod, currentPage, pageSize)
+  }, [selectedPeriod])
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    fetchData(selectedPeriod, page, pageSize)
+  }
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize)
+    setCurrentPage(0)
+    fetchData(selectedPeriod, 0, newPageSize)
+  }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -83,7 +75,7 @@ export default function SupportReportsPage() {
     return `${value.toFixed(1)}%`
   }
 
-  if (loading) {
+  if (loading || !supportSummary) {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold tracking-tight">Support Reports</h1>
@@ -108,9 +100,28 @@ export default function SupportReportsPage() {
               <SelectItem value="yearly">Yearly</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm">
+          <Select value={pageSize.toString()} onValueChange={(value) => handlePageSizeChange(parseInt(value))}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5 per page</SelectItem>
+              <SelectItem value="10">10 per page</SelectItem>
+              <SelectItem value="20">20 per page</SelectItem>
+              <SelectItem value="50">50 per page</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              setCurrentPage(0)
+              fetchData(selectedPeriod, 0, pageSize)
+            }}
+            disabled={loading}
+          >
             <Download className="h-4 w-4 mr-2" />
-            Export
+            Refresh
           </Button>
         </div>
       </div>
@@ -196,7 +207,14 @@ export default function SupportReportsPage() {
       {/* Department Analysis */}
       <Card>
         <CardHeader>
-          <CardTitle>Department Support Analysis</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Department Support Analysis</CardTitle>
+            {totalElements > 0 && (
+              <div className="text-sm text-muted-foreground">
+                Showing {departmentAnalysis.length} of {totalElements} departments
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -236,6 +254,18 @@ export default function SupportReportsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalElements > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={totalElements}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
+      )}
     </div>
   )
 }
