@@ -5,6 +5,9 @@ import { apiClient } from "./axiosInstance"
 
 // Get current user from session
 export const getCurrentUser = (): User | null => {
+  if (typeof window === 'undefined') {
+    return null
+  }
   const userSession = localStorage.getItem("currentUser")
   return userSession ? JSON.parse(userSession) : null
 }
@@ -19,13 +22,15 @@ export const login = async (credentials: LoginCredentials): Promise<User> => {
     if (loginResponse.success && loginResponse.user) {
       // Store user session (excluding password)
       const { password, ...userSession } = loginResponse.user
-      localStorage.setItem("currentUser", JSON.stringify(userSession))
-      
-      // Store credentials for future requests (in a real app, use a more secure method)
-      localStorage.setItem("authCredentials", JSON.stringify({
-        username: credentials.username,
-        password: credentials.password
-      }))
+      if (typeof window !== 'undefined') {
+        localStorage.setItem("currentUser", JSON.stringify(userSession))
+        
+        // Store credentials for future requests (in a real app, use a more secure method)
+        localStorage.setItem("authCredentials", JSON.stringify({
+          username: credentials.username,
+          password: credentials.password
+        }))
+      }
       
       // Update the axios instance to include authentication for future requests
       const auth = btoa(`${credentials.username}:${credentials.password}`)
@@ -99,7 +104,9 @@ const localLogin = async (credentials: LoginCredentials): Promise<User> => {
 
   // Store user session (excluding password)
   const { password, ...userSession } = user
-  localStorage.setItem("currentUser", JSON.stringify(userSession))
+  if (typeof window !== 'undefined') {
+    localStorage.setItem("currentUser", JSON.stringify(userSession))
+  }
 
   return userSession
 }
@@ -114,8 +121,10 @@ export const logout = async (): Promise<void> => {
   }
   
   // Always clear local session
-  localStorage.removeItem("currentUser")
-  localStorage.removeItem("authCredentials")
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem("currentUser")
+    localStorage.removeItem("authCredentials")
+  }
   
   // Clear authentication header
   delete apiClient.defaults.headers.common['Authorization']
@@ -124,6 +133,11 @@ export const logout = async (): Promise<void> => {
 // Restore authentication from stored credentials
 export const restoreAuth = (): boolean => {
   try {
+    // Only run in browser environment
+    if (typeof window === 'undefined') {
+      return false
+    }
+    
     const authCredentials = localStorage.getItem("authCredentials")
     const currentUser = localStorage.getItem("currentUser")
     
@@ -141,6 +155,9 @@ export const restoreAuth = (): boolean => {
 
 // Check if user is authenticated
 export const isAuthenticated = (): boolean => {
+  if (typeof window === 'undefined') {
+    return false
+  }
   return getCurrentUser() !== null
 }
 
