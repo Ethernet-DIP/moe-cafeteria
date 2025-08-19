@@ -323,8 +323,7 @@ export default function EmployeesPage() {
                     <SelectItem value="employeeId-desc">Employee ID (Z-A)</SelectItem>
                     <SelectItem value="department-asc">Department (A-Z)</SelectItem>
                     <SelectItem value="department-desc">Department (Z-A)</SelectItem>
-                    <SelectItem value="salary-desc">Salary (High-Low)</SelectItem>
-                    <SelectItem value="salary-asc">Salary (Low-High)</SelectItem>
+                  
                   </SelectContent>
                 </Select>
               </div>
@@ -343,7 +342,6 @@ export default function EmployeesPage() {
                       <TableHead>Employee ID</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Department</TableHead>
-                      <TableHead>Salary</TableHead>
                       <TableHead>Support Status</TableHead>
                       <TableHead>Card ID</TableHead>
                       <TableHead>Short Code</TableHead>
@@ -364,7 +362,6 @@ export default function EmployeesPage() {
                           <TableCell className="font-medium">{employee.employeeId}</TableCell>
                           <TableCell>{employee.name}</TableCell>
                           <TableCell>{employee.department}</TableCell>
-                          <TableCell>{employee.salary ? `${employee.salary.toFixed(2)} ETB` : "N/A"}</TableCell>
                           <TableCell>
                             <Badge
                               variant={employee.eligibleForSupport ? "default" : "destructive"}
