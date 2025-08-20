@@ -163,6 +163,11 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
     } finally {
       setProcessing(false)
       setInputValue("")
+      
+      // Re-focus the input field after processing
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 100)
 
       // Clear results after 10 seconds - REMOVED
       // setTimeout(() => {
@@ -226,6 +231,11 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
       })
     } finally {
       setPrinting(false)
+      
+      // Re-focus the input field after printing
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 100)
     }
   }
 
@@ -260,6 +270,7 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
               placeholder="Scan NFC card or enter 4-digit employee code..."
               className="text-center text-lg py-3"
               disabled={processing}
+              autoFocus
             />
             <p className="text-sm text-gray-500 text-center mt-2">
               {processing ? "Processing..." : "Ready to scan or type employee code"}
