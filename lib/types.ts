@@ -13,6 +13,7 @@ export interface MealCategory {
   name: string
   normalPrice: number
   supportedPrice: number
+  allowedCount: number
   isActive: boolean
 }
 
@@ -27,6 +28,19 @@ export interface MealItem {
   isActive: boolean
   createdAt: string
   updatedAt: string
+}
+
+export interface OrderItem {
+  item: MealItem
+  quantity: number
+  price: number
+}
+
+export interface Order {
+  items: OrderItem[]
+  totalPrice: number
+  employeeId: string
+  mealCategoryId: string
 }
 
 export interface Employee {
