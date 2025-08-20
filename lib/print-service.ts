@@ -31,7 +31,7 @@ export const generateReceiptTextLocally = (
                       `Time: ${currentTime}\n` +
                       `Employee: ${employee?.shortCode || 'Unknown'}\n` +
                       `Meal Type: ${mealType?.name || mealRecord.mealTypeId || 'Unknown'}\n` +
-                      `Meal Category: ${mealCategory?.name || mealRecord.mealName || 'Unknown'}\n` +
+                      `Meal Category: **${mealCategory?.name || mealRecord.mealName || 'Unknown'}**\n` +
                       `Actual Price: ${mealRecord.actualPrice?.toFixed(2) || '0.00'} ETB\n` +
                       `Thank you for using our service!\n\n\n\n\n\n\n\n\n\n\n\n`
   
