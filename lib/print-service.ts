@@ -13,15 +13,24 @@ const getApiBaseUrl = () => {
 }
 
 // Generate receipt text locally (fallback when backend is not available)
-export const generateReceiptTextLocally = (mealRecord: any, format: 'simple' | 'detailed' = 'detailed'): ReceiptData => {
+export const generateReceiptTextLocally = (
+  mealRecord: any, 
+  employee?: any, 
+  mealCategory?: any, 
+  format: 'simple' | 'detailed' = 'detailed'
+): ReceiptData => {
   const now = new Date()
   const currentTime = now.toLocaleTimeString()
   const currentDate = now.toLocaleDateString()
   
-  // Simplified receipt format with only requested fields
-  const receiptText = `Employee: ${mealRecord.employeeName || 'Unknown'}\n` +
+  // Simplified receipt format with only requested fields - ensure UTF-8 encoding for Amharic
+  const receiptText = `MOE CAFETERIA\n` +
+                      `Order: ${mealRecord.orderNumber || 'N/A'}\n` +
+                      `Date: ${currentDate}\n` +
+                      `Time: ${currentTime}\n` +
+                      `Employee: ${employee?.shortCode || 'Unknown'}\n` +
                       `Meal Type: ${mealRecord.mealTypeId || 'Unknown'}\n` +
-                      `Meal Category: ${mealRecord.mealName || 'Unknown'}\n` +
+                      `Meal Category: ${mealCategory?.name || mealRecord.mealName || 'Unknown'}\n` +
                       `Actual Price: ${mealRecord.actualPrice?.toFixed(2) || '0.00'} ETB\n` +
                       `Thank you for using our service!\n`
   

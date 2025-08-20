@@ -18,16 +18,14 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Create the print data with escape sequences - simplified format
-    const printData = Buffer.from([
-      0x1B, 0x40, // Initialize printer
-      ...Buffer.from('MOE CAFETERIA\n'),
-      ...Buffer.from(`Order: ${orderNumber}\n`),
-      ...Buffer.from(`Date: ${new Date().toLocaleDateString()}\n`),
-      ...Buffer.from(`Time: ${new Date().toLocaleTimeString()}\n`),
-      ...Buffer.from(receiptText),
-      ...Buffer.from('\n\n\n'), // Paper feed
-      0x1D, 0x56, 0x00 // Cut paper (partial cut)
+    // Create the print data with escape sequences - simplified format with UTF-8 encoding
+    // Only add the receipt text since it already contains the header
+    // Ensure proper UTF-8 encoding for Amharic characters
+    const printData = Buffer.concat([
+      Buffer.from([0x1B, 0x40]), // Initialize printer
+      Buffer.from(receiptText, 'utf8'),
+      Buffer.from('\n\n\n', 'utf8'), // Paper feed
+      Buffer.from([0x1D, 0x56, 0x00]) // Cut paper (partial cut)
     ])
     
     // Create a temporary file to store the print data
@@ -37,8 +35,8 @@ export async function POST(request: NextRequest) {
       // Write the binary print data to the temporary file
       await writeFile(tempFile, printData)
       
-      // Send the file to the printer
-      const command = `lp -d ${printer} ${tempFile}`
+      // Send the file to the printer with UTF-8 encoding
+      const command = `lp -d ${printer} -o media=Custom.80x200mm -o fit-to-page ${tempFile}`
       
       console.log('Executing print command:', command)
       

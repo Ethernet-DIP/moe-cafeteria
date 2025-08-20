@@ -28,8 +28,9 @@ export async function POST(request: NextRequest) {
       .replace(/\\\\t/g, '\t')      // Convert \\t to \t
       .replace(/\\\\x00/g, '\x00')  // Convert \\x00 to \x00
     
-    // Create binary buffer from the processed data
-    const printData = Buffer.from(processedData, 'binary')
+    // Create binary buffer from the processed data with UTF-8 encoding
+    // Ensure proper UTF-8 encoding for Amharic characters
+    const printData = Buffer.from(processedData, 'utf8')
     
     // Create a temporary file to store the print data
     const tempFile = join(tmpdir(), `receipt-direct-${Date.now()}.txt`)
@@ -38,8 +39,8 @@ export async function POST(request: NextRequest) {
       // Write the binary print data to the temporary file
       await writeFile(tempFile, printData)
       
-      // Send the file to the printer
-      const command = `lp -d ${printer} ${tempFile}`
+      // Send the file to the printer with UTF-8 encoding
+      const command = `lp -d ${printer} -o media=Custom.80x200mm -o fit-to-page ${tempFile}`
       
       console.log('Executing print command:', command)
       

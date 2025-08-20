@@ -200,9 +200,9 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
     
     setPrinting(true)
     try {
-      // Generate receipt locally
+      // Generate receipt locally with employee data
       console.log("Generating receipt locally for order:", mealRecord.orderNumber)
-      const receiptData = generateReceiptTextLocally(mealRecord, 'simple')
+      const receiptData = generateReceiptTextLocally(mealRecord, employee, mealCategory, 'simple')
       
       // Try echo command first, then fallback to browser print
       try {
