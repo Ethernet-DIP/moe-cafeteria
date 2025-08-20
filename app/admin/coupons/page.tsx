@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Filter, X, Download, Printer, Trash2, CheckCircle, XCircle, Hash } from "lucide-react"
-import { getAllCoupons, getCouponBatches, toggleBatchStatus, deleteCoupon, deleteBatch } from "@/lib/coupon-service"
+import { getCoupons, getCouponBatches, deleteCouponBatch, toggleBatchStatus, deleteCoupon, deleteBatch } from "@/lib/coupon-service"
 import type { Coupon, CouponBatch } from "@/lib/types"
 import CouponGeneratorModal from "@/components/coupon-generator-modal"
 import Pagination from "@/components/pagination"
@@ -56,7 +56,7 @@ export default function CouponsPage() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const [couponData, batchData] = await Promise.all([getAllCoupons(), getCouponBatches()])
+      const [couponData, batchData] = await Promise.all([getCoupons(), getCouponBatches()])
       setCoupons(couponData)
       setBatches(batchData)
     } catch (error) {

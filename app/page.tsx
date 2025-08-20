@@ -13,8 +13,8 @@ export default function Home() {
   const router = useRouter()
 
   const handleMealSelect = (mealCategory: MealCategory) => {
-    // Navigate to the scan page with the selected meal category
-    router.push(`/scan/${mealCategory.id}`)
+    // Navigate to the scan page with the meal type ID
+    router.push(`/scan?mealTypeId=${mealCategory.mealTypeId}`)
   }
 
   return (

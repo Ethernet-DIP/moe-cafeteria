@@ -19,20 +19,13 @@ export default function ProtectedRoute({ children, requiredRole = "operator" }: 
 
   useEffect(() => {
     const currentUser = getCurrentUser()
-    console.log("ProtectedRoute - Current user:", currentUser)
-    console.log("ProtectedRoute - Required role:", requiredRole)
-
+   
     if (!currentUser) {
-      console.log("ProtectedRoute - No user found, redirecting to login")
       router.push("/login")
       return
     }
 
     if (requiredRole && !hasRole(requiredRole)) {
-      console.log("ProtectedRoute - User doesn't have required role, redirecting to unauthorized")
-      console.log("ProtectedRoute - User role:", currentUser.role)
-      console.log("ProtectedRoute - Required role:", requiredRole)
-      console.log("ProtectedRoute - Has role result:", hasRole(requiredRole))
       router.push("/unauthorized")
       return
     }

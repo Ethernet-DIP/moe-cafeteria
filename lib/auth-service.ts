@@ -170,18 +170,10 @@ export const hasRole = (requiredRole: string): boolean => {
   const userRole = user.role?.toLowerCase() || ""
   const normalizedRequiredRole = requiredRole.toLowerCase()
 
-  console.log("hasRole - User role:", user.role)
-  console.log("hasRole - Normalized user role:", userRole)
-  console.log("hasRole - Required role:", requiredRole)
-  console.log("hasRole - Normalized required role:", normalizedRequiredRole)
-
+ 
   const roleHierarchy = { admin: 3, manager: 2, operator: 1 }
   const userLevel = roleHierarchy[userRole as keyof typeof roleHierarchy] || 0
   const requiredLevel = roleHierarchy[normalizedRequiredRole as keyof typeof roleHierarchy] || 0
-
-  console.log("hasRole - User level:", userLevel)
-  console.log("hasRole - Required level:", requiredLevel)
-  console.log("hasRole - Result:", userLevel >= requiredLevel)
 
   return userLevel >= requiredLevel
 }

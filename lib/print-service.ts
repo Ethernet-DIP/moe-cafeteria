@@ -18,21 +18,44 @@ export const generateReceiptTextLocally = (
   employee?: any, 
   mealCategory?: any, 
   mealType?: any,
-  format: 'simple' | 'detailed' = 'detailed'
+  format: 'simple' | 'detailed' = 'detailed',
+  selectedItems?: Array<{
+    item: {
+      id: string
+      name: string
+    }
+    quantity: number
+    price: number
+  }>
 ): ReceiptData => {
   const now = new Date()
   const currentTime = now.toLocaleTimeString()
   const currentDate = now.toLocaleDateString()
   
+  // Build selected items text
+  let selectedItemsText = ''
+  let totalPrice = 0
+  
+  if (selectedItems && selectedItems.length > 0) {
+    selectedItemsText = '\nSELECTED ITEMS:\n'
+    selectedItems.forEach(item => {
+      const itemTotal = item.price * item.quantity
+      totalPrice += itemTotal
+      selectedItemsText += `${item.item.name} x${item.quantity} - ${itemTotal.toFixed(2)} ETB\n`
+    })
+    selectedItemsText += `\nTOTAL: ${totalPrice.toFixed(2)} ETB\n`
+  }
+  
   // Simplified receipt format with only requested fields - ensure UTF-8 encoding for Amharic
   const receiptText = `MOE CAFETERIA\n` +
                       `Order: ${mealRecord.orderNumber || 'N/A'}\n` +
+                      selectedItemsText +
                       `Date: ${currentDate}\n` +
                       `Time: ${currentTime}\n` +
                       `Employee: ${employee?.shortCode || 'Unknown'}\n` +
                       `Meal Type: ${mealType?.name || mealRecord.mealTypeId || 'Unknown'}\n\n` +
-                      `Meal Category: **${mealCategory?.name || mealRecord.mealName || 'Unknown'}**\n\n` +
-                      `Actual Price: ${mealRecord.actualPrice?.toFixed(2) || '0.00'} ETB\n` +
+                      `Meal Category: **${mealCategory?.name || mealRecord.mealName || 'Unknown'}**\n` +
+                      `\nActual Price: ${mealRecord.actualPrice?.toFixed(2) || '0.00'} ETB\n` +
                       `Thank you for using our service!\n\n\n\n\n\n\n\n\n\n\n\n`
   
   return {

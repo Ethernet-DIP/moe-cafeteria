@@ -130,3 +130,28 @@ export const getCouponStats = async (batchId?: string): Promise<any> => {
     throw new Error("Failed to fetch coupon statistics")
   }
 }
+
+// Toggle batch status
+export const toggleBatchStatus = async (batchNumber: string): Promise<void> => {
+  try {
+    await apiClient.put(`/coupon-batches/${batchNumber}/toggle-status`)
+  } catch (error) {
+    console.error("Error toggling batch status:", error)
+    throw new Error("Failed to toggle batch status")
+  }
+}
+
+// Delete coupon
+export const deleteCoupon = async (id: string): Promise<void> => {
+  try {
+    await apiClient.delete(`/coupons/${id}`)
+  } catch (error) {
+    console.error("Error deleting coupon:", error)
+    throw new Error("Failed to delete coupon")
+  }
+}
+
+// Delete batch (alias for deleteCouponBatch)
+export const deleteBatch = async (id: string): Promise<void> => {
+  return deleteCouponBatch(id)
+}

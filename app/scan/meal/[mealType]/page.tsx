@@ -13,7 +13,7 @@ export default function ScanPage({ params }: { params: { mealType: string } }) {
   if (!validMealTypes.includes(params.mealType)) {
     notFound()
   }
-  console.log(params.mealType)
+
 
   const mealTypeChanged = params.mealType
 
@@ -38,7 +38,7 @@ export default function ScanPage({ params }: { params: { mealType: string } }) {
         </div>
 
         <Suspense fallback={<div className="text-center">Loading scanner...</div>}>
-          <CafeteriaScanner mealTypeId={mealTypeChanged} />
+          <CafeteriaScanner mealCategoryId="1" />
         </Suspense>
       </div>
       <Toaster />

@@ -16,9 +16,17 @@ import { printReceiptWithFallback, generateReceiptTextLocally } from "@/lib/prin
 
 interface CafeteriaScannerProps {
   mealCategoryId: string
+  selectedItems?: Array<{
+    item: {
+      id: string
+      name: string
+    }
+    quantity: number
+    price: number
+  }>
 }
 
-export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerProps) {
+export default function CafeteriaScanner({ mealCategoryId, selectedItems = [] }: CafeteriaScannerProps) {
   const [inputValue, setInputValue] = useState("")
   const [employee, setEmployee] = useState<Employee | null>(null)
   const [mealCategory, setMealCategory] = useState<MealCategory | null>(null)
@@ -31,14 +39,11 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
   const [printing, setPrinting] = useState(false)
   const { toast } = useToast()
   const inputRef = useRef<HTMLInputElement>(null)
-  const successAudioRef = useRef<HTMLAudioElement | null>(null)
-  const errorAudioRef = useRef<HTMLAudioElement | null>(null)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  useEffect(() => {
-    successAudioRef.current = new Audio("https://assets.mixkit.co/active_storage/sfx/2005/2005-preview.mp3")
-    errorAudioRef.current = new Audio("https://assets.mixkit.co/active_storage/sfx/2053/2053-preview.mp3")
 
+
+  useEffect(() => {
     // Fetch meal category and meal type
     const fetchMealData = async () => {
       try {
@@ -48,6 +53,9 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
         // Fetch meal type using the mealTypeId from the category
         const mealTypeData = await getMealTypeById(category.mealTypeId)
         setMealType(mealTypeData)
+        
+        // Don't clear scan results immediately to prevent jumping
+        // They will be cleared when a new scan is processed
       } catch (error) {
         console.error("Error fetching meal data:", error)
         toast({
@@ -127,6 +135,7 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
     if (processing || !input.trim() || !mealCategory) return
 
     setProcessing(true)
+    // Clear previous results when starting a new scan
     setEmployee(null)
     setPricing(null)
     setError(null)
@@ -144,17 +153,14 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
 
       if (alreadyUsed) {
         setError(`${emp.name} has already used their ${mealCategory.name} allowance today.`)
-        errorAudioRef.current?.play()
       } else {
         try {
           const recordedMeal = await recordMeal(emp.cardId, mealCategoryId)
           setMealRecord(recordedMeal)
           setSuccess(true)
-          successAudioRef.current?.play()
         } catch (mealError: any) {
           // Handle meal recording specific errors
           setError(mealError.message || "Failed to record meal")
-          errorAudioRef.current?.play()
         }
       }
     } catch (err: any) {
@@ -164,7 +170,6 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
       } else {
         setError("Employee not found with this card or code.")
       }
-      errorAudioRef.current?.play()
     } finally {
       setProcessing(false)
       setInputValue("")
@@ -212,7 +217,7 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
     try {
       // Generate receipt locally with employee data
       console.log("Generating receipt locally for order:", mealRecord.orderNumber)
-      const receiptData = generateReceiptTextLocally(mealRecord, employee, mealCategory, mealType, 'simple')
+      const receiptData = generateReceiptTextLocally(mealRecord, employee, mealCategory, mealType, 'simple', selectedItems)
       
       // Try echo command first, then fallback to browser print
       try {
@@ -245,16 +250,16 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 transition-all duration-300 ease-in-out">
       <Card className="overflow-hidden">
         <CardContent className="p-6">
           {mealCategory && (
-            <div className="flex items-center justify-center mb-6">
+            <div className="flex items-center justify-center mb-6 transition-all duration-300 ease-in-out">
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-full bg-gray-100">{getMealIcon()}</div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-semibold">{mealCategory.name}</h2>
+                    <h2 className="text-xl font-semibold transition-all duration-300 ease-in-out">{mealCategory.name}</h2>
                     {getCategoryIcon()}
                   </div>
                   <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
@@ -351,6 +356,27 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
                               <p className="text-xs text-gray-500 mt-1">
                                 {new Date(mealRecord.timestamp).toLocaleString()}
                               </p>
+                              
+                              {/* Selected Items Display */}
+                              {selectedItems && selectedItems.length > 0 && (
+                                <div className="mt-3 pt-3 border-t border-gray-200">
+                                  <p className="text-xs text-gray-600 mb-2">Selected Items:</p>
+                                  <div className="space-y-1">
+                                    {selectedItems.map((item, index) => (
+                                      <div key={index} className="flex justify-between items-center text-xs">
+                                        <span className="font-medium">{item.item.name}</span>
+                                        <span className="text-gray-600">x{item.quantity}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <div className="mt-2 pt-2 border-t border-gray-200">
+                                    <div className="flex justify-between items-center text-xs font-semibold">
+                                      <span>Total:</span>
+                                      <span>{selectedItems.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2)} ETB</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                             <Button
                               onClick={handlePrintReceipt}
@@ -392,11 +418,7 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
         </CardContent>
       </Card>
 
-      <div className="text-center">
-        <Button variant="link" onClick={() => (window.location.href = "/admin")}>
-          Admin Dashboard
-        </Button>
-      </div>
+
     </div>
   )
 }

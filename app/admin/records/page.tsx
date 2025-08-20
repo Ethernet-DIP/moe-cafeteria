@@ -216,7 +216,7 @@ export default function MealRecordsPage() {
       title: "View Details",
       description: `Viewing details for record ID: ${record.id}`,
     })
-    console.log("View details for record:", record)
+
   }
 
   const handleEditRecord = (record: MealRecord) => {
@@ -224,7 +224,7 @@ export default function MealRecordsPage() {
       title: "Edit Record",
       description: `Editing record ID: ${record.id}`,
     })
-    console.log("Edit record:", record)
+
   }
 
   const handleDeleteRecord = (record: MealRecord) => {
@@ -233,7 +233,7 @@ export default function MealRecordsPage() {
       description: `Deleting record ID: ${record.id}`,
       variant: "destructive",
     })
-    console.log("Delete record:", record)
+
     // In a real app, you'd call an API to delete the record and then refresh the list
   }
 

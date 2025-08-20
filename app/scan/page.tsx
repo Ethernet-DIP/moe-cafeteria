@@ -1,39 +1,86 @@
 'use client'
 import { Suspense, useEffect, useState } from "react"
-import { notFound } from "next/navigation"
+import { notFound, useSearchParams } from "next/navigation"
 import CafeteriaScanner from "@/components/cafeteria-scanner"
 import { Toaster } from "@/components/ui/toaster"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Plus, Minus, Printer } from "lucide-react"
 import Link from "next/link"
-import { getMealCategoryById, getMealCategoriesByType } from "@/lib/meal-service"
+import { getMealCategoryById, getMealCategoriesByType, getActiveMealTypes, getMealTypeById } from "@/lib/meal-service"
 import { getMealItemsByCategory } from "@/lib/meal-item-service"
 import ProtectedRoute from "@/components/protected-route"
 import { MealCategory, MealItem, OrderItem, Order } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useRouter } from "next/navigation"
 import { Package } from "lucide-react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-export default function ScanPage({ params }: { params: { mealCategoryId: string } }) {
-  const [mealCategory, setMealCategory] = useState<MealCategory | null>()
+function ScanPageContent() {
+  const searchParams = useSearchParams()
+  const mealTypeId = searchParams.get('mealTypeId')
+  
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("")
+  const [mealCategory, setMealCategory] = useState<MealCategory | null>(null)
   const [mealCategories, setMealCategories] = useState<MealCategory[]>([])
   const [mealItems, setMealItems] = useState<MealItem[]>([])
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([params.mealCategoryId])
   const [loading, setLoading] = useState(true)
+  const [currentMealTypeId, setCurrentMealTypeId] = useState<string>("")
+  const [mealTypes, setMealTypes] = useState<any[]>([])
   const [order, setOrder] = useState<Order>({
     items: [],
     totalPrice: 0,
     employeeId: "",
-    mealCategoryId: params.mealCategoryId
+    mealCategoryId: ""
   })
-  const router = useRouter()
   
   useEffect(() => {
-    fetchData(params.mealCategoryId)
-  }, [params.mealCategoryId])
+    // Initialize with the selected meal type or first available category
+    initializeCategories()
+  }, [mealTypeId])
+  
+  useEffect(() => {
+    if (selectedCategoryId) {
+      fetchData(selectedCategoryId)
+    }
+  }, [selectedCategoryId])
+  
+  const initializeCategories = async () => {
+    setLoading(true)
+    try {
+      // Get all active meal types
+      const allMealTypes = await getActiveMealTypes()
+      setMealTypes(allMealTypes)
+      
+      let targetMealTypeId = mealTypeId
+      
+      // If no meal type specified in URL, get the first active meal type
+      if (!targetMealTypeId) {
+        if (allMealTypes.length === 0) {
+          throw new Error("No active meal types found")
+        }
+        targetMealTypeId = allMealTypes[0].id
+      }
+      
+      setCurrentMealTypeId(targetMealTypeId)
+      
+      // Get categories for the specified meal type
+      const allCategories = await getMealCategoriesByType(targetMealTypeId)
+      const activeCategories = allCategories.filter(cat => cat.isActive)
+      
+      if (activeCategories.length > 0) {
+        setMealCategories(activeCategories)
+        setSelectedCategoryId(activeCategories[0].id)
+      } else {
+        throw new Error("No active meal categories found")
+      }
+    } catch (err) {
+      console.log(err)
+      notFound()
+    } finally {
+      setLoading(false)
+    }
+  }
   
   const fetchData = async (mealCategoryId: string) => {
     setLoading(true)
@@ -46,21 +93,38 @@ export default function ScanPage({ params }: { params: { mealCategoryId: string 
       }
       setMealCategory(mealCat)
       
-      // Fetch all meal categories for the same meal type
-      const categories = await getMealCategoriesByType(mealCat.mealTypeId)
-      setMealCategories(categories.filter(cat => cat.isActive))
-      
       // Fetch meal items for the selected category
       const items = await getMealItemsByCategory(mealCategoryId)
       setMealItems(items)
       
-      // Reset order for new category
-      setOrder({
-        items: [],
-        totalPrice: 0,
-        employeeId: "",
-        mealCategoryId: mealCategoryId
-      })
+      // Only reset order if it's a different meal type, not when switching categories within same meal type
+      if (order.mealCategoryId && order.mealCategoryId !== mealCategoryId) {
+        const currentCategory = mealCategories.find(cat => cat.id === order.mealCategoryId)
+        const newCategory = mealCat
+        
+        // If same meal type, don't reset order
+        if (currentCategory && currentCategory.mealTypeId === newCategory.mealTypeId) {
+          // Update mealCategoryId but keep existing items
+          setOrder(prev => ({
+            ...prev,
+            mealCategoryId: mealCategoryId
+          }))
+        } else {
+          // Different meal type, reset order
+          setOrder({
+            items: [],
+            totalPrice: 0,
+            employeeId: "",
+            mealCategoryId: mealCategoryId
+          })
+        }
+      } else if (!order.mealCategoryId) {
+        // Initial load, set mealCategoryId
+        setOrder(prev => ({
+          ...prev,
+          mealCategoryId: mealCategoryId
+        }))
+      }
     } catch (err) {
       console.log(err)
       notFound()
@@ -69,12 +133,13 @@ export default function ScanPage({ params }: { params: { mealCategoryId: string 
     }
   }
 
-  const handleCategorySelect = async (categoryId: string) => {
-    // Update URL without navigation to prevent jumping
-    window.history.replaceState(null, '', `/scan/${categoryId}`)
-    // Fetch data for the new category
-    await fetchData(categoryId)
+  const handleCategorySelect = (categoryId: string) => {
+    setSelectedCategoryId(categoryId)
+    // Fetch data for the new category while preserving selected items
+    fetchData(categoryId)
   }
+
+
 
   const addItemToOrder = (item: MealItem) => {
     if (!mealCategory) return
@@ -141,6 +206,23 @@ export default function ScanPage({ params }: { params: { mealCategoryId: string 
     if (newQuantity > (item?.totalAvailable || 0)) {
       alert(`Maximum available quantity (${item?.totalAvailable}) reached for ${item?.name}`)
       return
+    }
+
+    // Check if the new quantity would exceed the category's allowed count
+    if (mealCategory) {
+      const currentItemCount = order.items.reduce((total, orderItem) => {
+        if (orderItem.item.id === itemId) {
+          // Don't count the current item since we're updating it
+          return total
+        }
+        return total + orderItem.quantity
+      }, 0)
+      
+      const newTotalCount = currentItemCount + newQuantity
+      if (newTotalCount > mealCategory.allowedCount) {
+        alert(`You can only select ${mealCategory.allowedCount} item(s) from this category.`)
+        return
+      }
     }
 
     setOrder(prev => {
@@ -213,34 +295,41 @@ export default function ScanPage({ params }: { params: { mealCategoryId: string 
   return (
     <ProtectedRoute requiredRole="operator">
       <main className="min-h-screen bg-gray-50 p-4 md:p-8">
-        <div className="mb-4">
+        <div className="mb-4 flex justify-between items-center">
           <Link href="/">
             <Button variant="ghost" size="sm" className="gap-1">
               <ArrowLeft className="h-4 w-4" />
               Back to Meal Selection
             </Button>
           </Link>
+          <Link href="/admin">
+            <Button variant="outline" size="sm" className="gap-1">
+              Admin Dashboard
+            </Button>
+          </Link>
         </div>
 
-        <div className="flex gap-6 h-[calc(100vh-120px)]">
+        <div className="flex gap-6 h-[calc(100vh-140px)]">
           {/* Left Side - Scanner (60%) */}
           <div className="w-3/5 flex-shrink-0">
-            {mealCategory && (
-              <div className="transition-all duration-300 ease-in-out">
-                <CafeteriaScanner key={mealCategory.mealTypeId} mealCategoryId={params.mealCategoryId} />
-              </div>
-            )}
+                          {selectedCategoryId && (
+                <div className="transition-all duration-300 ease-in-out">
+                  <CafeteriaScanner key={currentMealTypeId} mealCategoryId={selectedCategoryId} selectedItems={order.items} />
+                </div>
+              )}
           </div>
 
           {/* Right Side - Meal Categories and Items (40%) */}
           <div className="w-2/5 flex-shrink-0">
+
+
             <Card className="bg-sidebar border-sidebar-border mb-3">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Meal Categories</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 <Tabs 
-                  value={mealCategory?.id || params.mealCategoryId} 
+                  value={selectedCategoryId} 
                   onValueChange={(value) => handleCategorySelect(value)}
                   className="w-full"
                 >
@@ -376,55 +465,7 @@ export default function ScanPage({ params }: { params: { mealCategoryId: string 
               </CardContent>
             </Card>
 
-            {/* Print Order Button */}
-            {order.items.length > 0 && (
-              <Card className="bg-sidebar border-sidebar-border">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Order Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-2">
-                    {order.items.map((orderItem) => (
-                      <div key={orderItem.item.id} className="flex justify-between items-center">
-                        <div className="flex-1">
-                          <span className="text-xs font-medium">{orderItem.item.name}</span>
-                          <span className="text-xs text-muted-foreground ml-1">
-                            x{orderItem.quantity}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs">
-                            {(orderItem.price * orderItem.quantity).toFixed(2)} ETB
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-5 w-5 p-0 text-red-500"
-                            onClick={() => removeItemFromOrder(orderItem.item.id)}
-                          >
-                            <Minus className="h-2 w-2" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="border-t pt-2">
-                      <div className="flex justify-between items-center font-medium">
-                        <span className="text-sm">Total:</span>
-                        <span className="text-sm">{order.totalPrice.toFixed(2)} ETB</span>
-                      </div>
-                    </div>
-                    <Button 
-                      onClick={handlePrint} 
-                      className="w-full h-8 text-xs"
-                      disabled={order.items.length === 0}
-                    >
-                      <Printer className="mr-1 h-3 w-3" />
-                      Print Receipt
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+
           </div>
         </div>
         
@@ -433,3 +474,20 @@ export default function ScanPage({ params }: { params: { mealCategoryId: string 
     </ProtectedRoute>
   )
 }
+
+export default function ScanPage() {
+  return (
+    <Suspense fallback={
+      <ProtectedRoute requiredRole="operator">
+        <main className="min-h-screen bg-gray-50 p-4 md:p-8">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p>Loading scanner...</p>
+          </div>
+        </main>
+      </ProtectedRoute>
+    }>
+      <ScanPageContent />
+    </Suspense>
+  )
+} 
