@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Receipt Printer</title>
+    <script type="text/javascript" src="js/qz-tray.js"></script>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/style1.css" />
+</head>
+
+<body>
+    <div class="item-list">
+        <h3>Products</h3>
+
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">JUICE</div>
+            <div class="category-items item-grid">
+                <div class="item-button" onclick="selectItem('Orange Juice', 2.50, 'JUICE', 'Orange Juice', 2.50, 'JUICE',s)">Orange Juice - $2.50</div>
+                <div class="item-button" onclick="selectItem('Apple Juice', 2.00, 'JUICE')">Apple Juice - $2.00</div>
+                <div class="item-button" onclick="selectItem('Apple Juice', 2.00, 'JUICE')">Apple Juice - $2.00</div>
+                <div class="item-button" onclick="selectItem('Apple Juice', 2.00, 'JUICE')">Apple Juice - $2.00</div>
+                <div class="item-button" onclick="selectItem('Apple Juice', 2.00, 'JUICE')">Apple Juice - $2.00</div>
+            </div>
+        </div>
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">FOOD</div>
+            <div class="category-items item-grid">
+                <div class="item-button" onclick="selectItem('Burger', 5.00, 'FOOD')">Burger - $5.00</div>
+                <div class="item-button" onclick="selectItem('Pizza', 8.00, 'FOOD')">Pizza - $8.00</div>
+            </div>
+
+        </div>
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">HOT DRINK</div>
+            <div class="category-items item-grid">
+                <div class="item-button" onclick="selectItem('Tea', 1.00, 'HOT DRINK')">Tea - $1.00</div>
+                <div class="item-button" onclick="selectItem('Coffee', 1.50, 'HOT DRINK')">Coffee - $1.50</div>
+            </div>
+        </div>
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">HOT DRINK</div>
+            <div class="category-items item-grid">
+                <div class="item-button" onclick="selectItem('Tea', 1.00, 'HOT DRINK')">Tea - $1.00</div>
+                <div class="item-button" onclick="selectItem('Coffee', 1.50, 'HOT DRINK')">Coffee - $1.50</div>
+            </div>
+        </div>
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">HOT DRINK</div>
+            <div class="category-items item-grid">
+                <div class="item-button" onclick="selectItem('Tea', 1.00, 'HOT DRINK')">Tea - $1.00</div>
+                <div class="item-button" onclick="selectItem('Coffee', 1.50, 'HOT DRINK')">Coffee - $1.50</div>
+            </div>
+        </div>
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">HOT DRINK</div>
+            <div class="category-items item-grid">
+                <div class="item-button" onclick="selectItem('Tea', 1.00, 'HOT DRINK')">Tea - $1.00</div>
+                <div class="item-button" onclick="selectItem('Coffee', 1.50, 'HOT DRINK')">Coffee - $1.50</div>
+            </div>
+        </div>
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">HOT DRINK</div>
+            <div class="category-items item-grid">
+                <div class="item-button" onclick="selectItem('Tea', 1.00, 'HOT DRINK')">Tea - $1.00</div>
+                <div class="item-button" onclick="selectItem('Coffee', 1.50, 'HOT DRINK')">Coffee - $1.50</div>
+            </div>
+        </div>
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">HOT DRINK</div>
+            <div class="category-items item-grid">
+                <div class="item-button" onclick="selectItem('Tea', 1.00, 'HOT DRINK')">Tea - $1.00</div>
+                <div class="item-button" onclick="selectItem('Coffee', 1.50, 'HOT DRINK')">Coffee - $1.50</div>
+            </div>
+        </div>
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">HOT DRINK</div>
+            <div class="category-items item-grid">
+                <div class="item-button" onclick="selectItem('Tea', 1.00, 'HOT DRINK')">Tea - $1.00</div>
+                <div class="item-button" onclick="selectItem('Coffee', 1.50, 'HOT DRINK')">Coffee - $1.50</div>
+            </div>
+        </div>
+        <div class="category">
+            <div class="category-header" onclick="toggleCategory(this)">HOT DRINK</div>
+            <div class="category-items item-grid">
+                <div class="item-button" onclick="selectItem('Tea', 1.00, 'HOT DRINK')">Tea - $1.00</div>
+                <div class="item-button" onclick="selectItem('Coffee', 1.50, 'HOT DRINK')">Coffee - $1.50</div>
+            </div>
+        </div>
+    </div>
+    <div class="selected-items">
+        <h3>Selected Products</h3>
+        <ul id="selectedItemsList"></ul>
+
+        <button onclick="printReceipt()">Make Item & Print</button>
+    </div>
+    <script>
+        const selectedItems = [];
+        let printerConfig = null;
+
+        async function connectToPrinter() {
+            if (!qz.websocket.isActive()) {
+                await qz.websocket.connect();
+                console.log("Connected to QZ Tray");
+            }
+            if (!printerConfig) {
+                qz.printers.find().then(console.log).catch(console.error)
+
+                printerConfig = qz.configs.create("POS-80");
+            }
+        }
+
+        // Connect on page load
+        connectToPrinter();
+
+        function toggleCategory(header) {
+            const itemsDiv = header.nextElementSibling;
+            itemsDiv.style.display = itemsDiv.style.display === 'none' || !itemsDiv.style.display ? 'grid' : 'none';
+        }
+
+        function selectItem(name, price, category) {
+            selectedItems.push({
+                name,
+                price,
+                category
+            });
+            renderSelectedItems();
+        }
+
+        function renderSelectedItems() {
+            const grouped = {};
+            selectedItems.forEach(item => {
+                if (!grouped[item.category]) grouped[item.category] = [];
+                grouped[item.category].push(item);
+            });
+
+            const list = document.getElementById('selectedItemsList');
+            list.innerHTML = '';
+            for (const category in grouped) {
+                const catHeader = document.createElement('li');
+                catHeader.textContent = category;
+                catHeader.style.fontWeight = 'bold';
+                list.appendChild(catHeader);
+                grouped[category].forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = `${item.name} - $${item.price.toFixed(2)}`;
+                    list.appendChild(li);
+                });
+            }
+        }
+
+        async function printReceipt() {
+            if (!printerConfig) {
+                alert("Printer not ready. Please wait for connection.");
+                return;
+            }
+
+            const now = new Date();
+            const dateTime = now.toLocaleString();
+            const orderNumber = 'ORD-' + now.getFullYear() + 
+                               String(now.getMonth() + 1).padStart(2, '0') + 
+                               String(now.getDate()).padStart(2, '0') + '-' + 
+                               String(now.getTime() % 10000).padStart(4, '0');
+            
+            let data = [
+                '\x1B\x40',
+                '\x1B\x61\x01',
+                '\x1D\x21\x11',
+                'MOE CAFETERIA\n',
+                '\x1D\x21\x00',
+                'Order: ' + orderNumber + '\n',
+                dateTime + '\n',
+                '\x1B\x61\x00'
+            ];
+
+            const grouped = {};
+            selectedItems.forEach(item => {
+
+
+                if (!grouped[item.category]) grouped[item.category] = [];
+                grouped[item.category].push(item);
+            });
+
+            for (const category in grouped) {
+                data.push(`\n${category}\n`);
+                grouped[category].forEach(item => {
+                    data.push(`\x1B\x61\x01${item.name.padEnd(18)} $${item.price.toFixed(2)}\n`);
+                });
+            }
+
+            data.push(
+                '\n',
+                '\x1B\x61\x01',
+                'Thank you!\n',
+                '\n\n\n',
+                '\n\n\n',
+                '\n\n\n',
+                '\n\n\n',
+                '\x1D\x56\x01',
+                '\x07'
+            );
+
+            try {
+
+                await qz.print(printerConfig, data);
+                console.log("Printed!");
+                selectedItems.length = 0;
+                renderSelectedItems();
+            } catch (err) {
+                console.error("Print error: ", err);
+            }
+        }
+    </script>
+</body>
+
+</html>

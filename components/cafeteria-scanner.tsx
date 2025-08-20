@@ -7,11 +7,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
-import { AlertCircle, CheckCircle, Utensils, Coffee, Moon, Leaf, UtensilsCrossed, DollarSign } from "lucide-react"
+import { AlertCircle, CheckCircle, Utensils, Coffee, Moon, Leaf, UtensilsCrossed, DollarSign, Printer } from "lucide-react"
 import Image from "next/image"
-import type { Employee, MealCategory } from "@/lib/types"
+import type { Employee, MealCategory, MealRecord } from "@/lib/types"
 import { getEmployeeByCardId, recordMeal, hasUsedMeal, getMealPricing } from "@/lib/employee-service"
 import { getMealCategoryById } from "@/lib/meal-service"
+import { printReceiptWithFallback, generateReceiptTextLocally } from "@/lib/print-service"
 
 interface CafeteriaScannerProps {
   mealCategoryId: string
@@ -25,6 +26,8 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [processing, setProcessing] = useState(false)
+  const [mealRecord, setMealRecord] = useState<MealRecord | null>(null)
+  const [printing, setPrinting] = useState(false)
   const { toast } = useToast()
   const inputRef = useRef<HTMLInputElement>(null)
   const successAudioRef = useRef<HTMLAudioElement | null>(null)
@@ -34,16 +37,6 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
   useEffect(() => {
     successAudioRef.current = new Audio("https://assets.mixkit.co/active_storage/sfx/2005/2005-preview.mp3")
     errorAudioRef.current = new Audio("https://assets.mixkit.co/active_storage/sfx/2053/2053-preview.mp3")
-
-    // Always keep input focused
-    const focusInput = () => {
-      if (inputRef.current && !processing) {
-        inputRef.current.focus()
-      }
-    }
-
-    focusInput()
-    const interval = setInterval(focusInput, 100)
 
     // Fetch meal category
     const fetchMealCategory = async () => {
@@ -61,9 +54,7 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
     }
 
     fetchMealCategory()
-
-    return () => clearInterval(interval)
-  }, [mealCategoryId, processing, toast])
+  }, [mealCategoryId, toast])
 
   useEffect(() => {
     // Initialize NFC reader if available
@@ -151,7 +142,8 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
         errorAudioRef.current?.play()
       } else {
         try {
-          await recordMeal(emp.cardId, mealCategoryId)
+          const recordedMeal = await recordMeal(emp.cardId, mealCategoryId)
+          setMealRecord(recordedMeal)
           setSuccess(true)
           successAudioRef.current?.play()
         } catch (mealError: any) {
@@ -198,6 +190,43 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
   const getCategoryIcon = () => {
     if (!mealCategory) return null
     return mealCategory.category === "fasting" ? <Leaf className="h-4 w-4" /> : <UtensilsCrossed className="h-4 w-4" />
+  }
+
+  const handlePrintReceipt = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!mealRecord) return
+    
+    setPrinting(true)
+    try {
+      // Generate receipt locally
+      console.log("Generating receipt locally for order:", mealRecord.orderNumber)
+      const receiptData = generateReceiptTextLocally(mealRecord, 'simple')
+      
+      // Try echo command first, then fallback to browser print
+      try {
+        const { printReceiptEcho } = await import('@/lib/print-service')
+        await printReceiptEcho(receiptData.receiptText, receiptData.orderNumber)
+      } catch (echoError) {
+        console.log("Echo command failed, using browser print:", echoError)
+        const { printReceipt } = await import('@/lib/print-service')
+        printReceipt(receiptData.receiptText, receiptData.orderNumber)
+      }
+      
+      toast({
+        title: "Receipt Printed",
+        description: `Order ${mealRecord.orderNumber} has been printed successfully.`,
+      })
+    } catch (error: any) {
+      toast({
+        title: "Print Error",
+        description: error.message || "Failed to print receipt",
+        variant: "destructive",
+      })
+    } finally {
+      setPrinting(false)
+    }
   }
 
   return (
@@ -294,8 +323,8 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
 
               {error ? (
                 <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-md text-center w-full max-w-sm">{error}</div>
-              ) : success && mealCategory && pricing ? (
-                <div className="mt-4 p-3 bg-green-50 text-green-700 rounded-md text-center w-full max-w-sm">
+              ) : success && mealCategory && pricing && mealRecord ? (
+                <div className="mt-4 p-4 bg-green-50 text-green-700 rounded-md text-center w-full max-w-sm">
                   <p className="font-semibold">{mealCategory.name} access granted!</p>
                   <p className="text-sm mt-1">
                     Charged: {pricing.applicablePrice.toFixed(2)} ETB
@@ -303,6 +332,22 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
                       <span className="block">Saved: {pricing.supportAmount.toFixed(2)} ETB</span>
                     )}
                   </p>
+                  <div className="mt-3 p-2 bg-white rounded border">
+                    <p className="text-xs text-gray-600">Order Number</p>
+                    <p className="font-mono font-bold text-lg">{mealRecord.orderNumber}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(mealRecord.timestamp).toLocaleString()}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handlePrintReceipt}
+                    disabled={printing}
+                    className="mt-3 w-full"
+                    size="sm"
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    {printing ? "Printing..." : "Print Receipt"}
+                  </Button>
                 </div>
               ) : null}
             </div>

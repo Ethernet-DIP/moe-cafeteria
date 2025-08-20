@@ -60,12 +60,13 @@ export const hasUsedMeal = async (cardId: string, mealTypeId: string): Promise<b
 }
 
 // Record a meal for an employee
-export const recordMeal = async (cardId: string, mealCategoryId: string): Promise<void> => {
+export const recordMeal = async (cardId: string, mealCategoryId: string): Promise<MealRecord> => {
   try {
-    await apiClient.post("/meal-records/record", {
+    const response = await apiClient.post("/meal-records/record", {
       cardId,
       mealCategoryId
     })
+    return response.data
   } catch (error: any) {
     console.error("Error recording meal:", error)
     if (error.response?.data?.message) {
