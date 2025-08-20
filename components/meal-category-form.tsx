@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,13 +31,34 @@ export default function MealCategoryForm({
   const [categoryType, setCategoryType] = useState<"fasting" | "non_fasting">(category?.category || "fasting")
   const [normalPrice, setNormalPrice] = useState(category?.normalPrice.toString() || "")
   const [supportedPrice, setSupportedPrice] = useState(category?.supportedPrice.toString() || "")
+  const [allowedCount, setAllowedCount] = useState(category?.allowedCount?.toString() || "1")
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
+
+  // Update form fields when category prop changes
+  useEffect(() => {
+    if (category) {
+      setName(category.name || "")
+      setMealTypeId(category.mealTypeId || "")
+      setCategoryType(category.category || "fasting")
+      setNormalPrice(category.normalPrice?.toString() || "")
+      setSupportedPrice(category.supportedPrice?.toString() || "")
+      setAllowedCount(category.allowedCount?.toString() || "1")
+    } else {
+      // Reset form for new category
+      setName("")
+      setMealTypeId("")
+      setCategoryType("fasting")
+      setNormalPrice("")
+      setSupportedPrice("")
+      setAllowedCount("1")
+    }
+  }, [category])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!name || !mealTypeId || !normalPrice || !supportedPrice) {
+    if (!name || !mealTypeId || !normalPrice || !supportedPrice || !allowedCount) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -64,6 +85,11 @@ export default function MealCategoryForm({
         throw new Error("Supported price must be less than normal price")
       }
 
+      const allowedCountValue = Number.parseInt(allowedCount)
+      if (isNaN(allowedCountValue) || allowedCountValue <= 0) {
+        throw new Error("Allowed count must be a positive number")
+      }
+
       if (category) {
         // Update existing category
         await updateMealCategory(category.id, {
@@ -72,6 +98,7 @@ export default function MealCategoryForm({
           category: categoryType,
           normalPrice: normalPriceValue,
           supportedPrice: supportedPriceValue,
+          allowedCount: allowedCountValue,
         })
         toast({
           title: "Success",
@@ -85,6 +112,7 @@ export default function MealCategoryForm({
           category: categoryType,
           normalPrice: normalPriceValue,
           supportedPrice: supportedPriceValue,
+          allowedCount: allowedCountValue,
           isActive: true,
         })
         toast({
@@ -183,6 +211,20 @@ export default function MealCategoryForm({
                 required
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="allowedCount">Allowed Count</Label>
+            <Input
+              id="allowedCount"
+              type="number"
+              min="1"
+              value={allowedCount}
+              onChange={(e) => setAllowedCount(e.target.value)}
+              placeholder="1"
+              required
+            />
+            <p className="text-sm text-gray-500">Maximum number of items allowed from this category</p>
           </div>
 
           <DialogFooter>

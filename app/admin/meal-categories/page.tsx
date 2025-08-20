@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import { Plus, Pencil, Trash2, AlertTriangle, CheckCircle, XCircle } from "lucide-react"
+import { Plus, Pencil, Trash2, AlertTriangle, CheckCircle, XCircle, Filter } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getMealCategories, getMealTypes, toggleMealCategoryActive, deleteMealCategory } from "@/lib/meal-service"
 import type { MealCategory, MealType } from "@/lib/types"
 import MealCategoryForm from "@/components/meal-category-form"
@@ -30,6 +31,8 @@ export default function MealCategoriesPage() {
   const [selectedCategory, setSelectedCategory] = useState<MealCategory | undefined>(undefined)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [categoryToDelete, setCategoryToDelete] = useState<MealCategory | null>(null)
+  const [mealTypeFilter, setMealTypeFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
   const { toast } = useToast()
 
   useEffect(() => {
@@ -127,6 +130,16 @@ export default function MealCategoriesPage() {
     )
   }
 
+  // Filter categories based on selected filters
+  const filteredCategories = mealCategories.filter((category) => {
+    const matchesMealType = mealTypeFilter === "all" || category.mealTypeId === mealTypeFilter
+    const matchesStatus = statusFilter === "all" || 
+      (statusFilter === "active" && category.isActive) || 
+      (statusFilter === "inactive" && !category.isActive)
+    
+    return matchesMealType && matchesStatus
+  })
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">Meal Categories</h1>
@@ -140,6 +153,51 @@ export default function MealCategoriesPage() {
           </Button>
         </CardHeader>
         <CardContent>
+          {/* Filters */}
+          <div className="flex gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Filters:</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Meal Type:</label>
+              <Select value={mealTypeFilter} onValueChange={setMealTypeFilter}>
+                <SelectTrigger className="w-40 h-8">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {mealTypes.map((mealType) => (
+                    <SelectItem key={mealType.id} value={mealType.id}>
+                      {mealType.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Status:</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-32 h-8">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
+              <span className="text-sm text-gray-600">
+                Showing {filteredCategories.length} of {mealCategories.length} categories
+              </span>
+            </div>
+          </div>
+          
           {loading ? (
             <div className="text-center py-8">Loading meal categories...</div>
           ) : (
@@ -152,19 +210,20 @@ export default function MealCategoriesPage() {
                     <TableHead>Category</TableHead>
                     <TableHead>Normal Price</TableHead>
                     <TableHead>Supported Price</TableHead>
+                    <TableHead>Allowed Count</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mealCategories.length === 0 ? (
+                  {filteredCategories.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center">
-                        No meal categories found
+                      <TableCell colSpan={8} className="text-center">
+                        {mealCategories.length === 0 ? "No meal categories found" : "No categories match the selected filters"}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    mealCategories.map((category) => (
+                    filteredCategories.map((category) => (
                       <TableRow key={category.id}>
                         <TableCell className="font-medium">{category.name}</TableCell>
                         <TableCell>{getMealTypeName(category.mealTypeId)}</TableCell>
@@ -172,6 +231,9 @@ export default function MealCategoriesPage() {
                         <TableCell>{category.normalPrice.toFixed(2)} ETB</TableCell>
                         <TableCell className="text-green-600 font-medium">
                           {category.supportedPrice.toFixed(2)} ETB
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {category.allowedCount || 1}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">

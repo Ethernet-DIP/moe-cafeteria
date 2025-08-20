@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,6 +25,20 @@ export default function MealTypeForm({ open, onOpenChange, mealType, onSuccess }
   const [color, setColor] = useState(mealType?.color || "bg-emerald-100 text-emerald-700")
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
+
+  // Update form fields when mealType prop changes
+  useEffect(() => {
+    if (mealType) {
+      setName(mealType.name || "")
+      setIcon(mealType.icon || "utensils")
+      setColor(mealType.color || "bg-emerald-100 text-emerald-700")
+    } else {
+      // Reset form for new meal type
+      setName("")
+      setIcon("utensils")
+      setColor("bg-emerald-100 text-emerald-700")
+    }
+  }, [mealType])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
