@@ -17,6 +17,7 @@ export const generateReceiptTextLocally = (
   mealRecord: any, 
   employee?: any, 
   mealCategory?: any, 
+  mealType?: any,
   format: 'simple' | 'detailed' = 'detailed'
 ): ReceiptData => {
   const now = new Date()
@@ -29,7 +30,7 @@ export const generateReceiptTextLocally = (
                       `Date: ${currentDate}\n` +
                       `Time: ${currentTime}\n` +
                       `Employee: ${employee?.shortCode || 'Unknown'}\n` +
-                      `Meal Type: ${mealRecord.mealTypeId || 'Unknown'}\n` +
+                      `Meal Type: ${mealType?.name || mealRecord.mealTypeId || 'Unknown'}\n` +
                       `Meal Category: ${mealCategory?.name || mealRecord.mealName || 'Unknown'}\n` +
                       `Actual Price: ${mealRecord.actualPrice?.toFixed(2) || '0.00'} ETB\n` +
                       `Thank you for using our service!\n\n\n\n\n\n\n\n\n\n\n\n`

@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { AlertCircle, CheckCircle, Utensils, Coffee, Moon, Leaf, UtensilsCrossed, DollarSign, Printer } from "lucide-react"
 import Image from "next/image"
-import type { Employee, MealCategory, MealRecord } from "@/lib/types"
+import type { Employee, MealCategory, MealRecord, MealType } from "@/lib/types"
 import { getEmployeeByCardId, recordMeal, hasUsedMeal, getMealPricing } from "@/lib/employee-service"
-import { getMealCategoryById } from "@/lib/meal-service"
+import { getMealCategoryById, getMealTypeById } from "@/lib/meal-service"
 import { printReceiptWithFallback, generateReceiptTextLocally } from "@/lib/print-service"
 
 interface CafeteriaScannerProps {
@@ -22,6 +22,7 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
   const [inputValue, setInputValue] = useState("")
   const [employee, setEmployee] = useState<Employee | null>(null)
   const [mealCategory, setMealCategory] = useState<MealCategory | null>(null)
+  const [mealType, setMealType] = useState<MealType | null>(null)
   const [pricing, setPricing] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -38,13 +39,17 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
     successAudioRef.current = new Audio("https://assets.mixkit.co/active_storage/sfx/2005/2005-preview.mp3")
     errorAudioRef.current = new Audio("https://assets.mixkit.co/active_storage/sfx/2053/2053-preview.mp3")
 
-    // Fetch meal category
-    const fetchMealCategory = async () => {
+    // Fetch meal category and meal type
+    const fetchMealData = async () => {
       try {
         const category = await getMealCategoryById(mealCategoryId)
         setMealCategory(category)
+        
+        // Fetch meal type using the mealTypeId from the category
+        const mealTypeData = await getMealTypeById(category.mealTypeId)
+        setMealType(mealTypeData)
       } catch (error) {
-        console.error("Error fetching meal category:", error)
+        console.error("Error fetching meal data:", error)
         toast({
           title: "Error",
           description: "Could not load meal information",
@@ -53,7 +58,7 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
       }
     }
 
-    fetchMealCategory()
+    fetchMealData()
   }, [mealCategoryId, toast])
 
   useEffect(() => {
@@ -207,7 +212,7 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
     try {
       // Generate receipt locally with employee data
       console.log("Generating receipt locally for order:", mealRecord.orderNumber)
-      const receiptData = generateReceiptTextLocally(mealRecord, employee, mealCategory, 'simple')
+      const receiptData = generateReceiptTextLocally(mealRecord, employee, mealCategory, mealType, 'simple')
       
       // Try echo command first, then fallback to browser print
       try {
