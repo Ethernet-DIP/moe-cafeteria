@@ -14,10 +14,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <ProtectedRoute requiredRole="manager">
       <SidebarProvider>
-        <div className="flex h-screen bg-gray-50">
+        <div className="flex h-screen w-full bg-gray-50">
           <AdminSidebar />
-          <div className="flex-1 overflow-auto">
-            <div className="p-4 md:p-8">
+          <div className="flex-1 min-w-0 overflow-auto">
+            <div className="w-full p-4 md:p-8">
               <div className="mb-4">
                 <Link href="/">
                   <Button variant="ghost" size="sm" className="gap-1">
@@ -26,7 +26,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   </Button>
                 </Link>
               </div>
-              {children}
+              <div className="w-full">
+                {children}
+              </div>
             </div>
           </div>
         </div>
