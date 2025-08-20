@@ -267,10 +267,10 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
           </div>
 
           {employee ? (
-            <div className="flex flex-col items-center space-y-4">
-              <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200">
+            <div className="flex flex-col items-center space-y-2">
+              <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-gray-10">
                 <Image
-                  src={employee.photoUrl || "/placeholder.svg?height=128&width=128"}
+                  src={employee.photoUrl || "/placeholder.svg?height=80&width=80"}
                   alt={employee.name}
                   fill
                   className="object-cover"
@@ -287,9 +287,8 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
               </div>
 
               <div className="text-center">
-                <h2 className="text-2xl font-bold">{employee.name} - {employee.department}</h2>
-                <p className="text-sm text-gray-400">ID: {employee.employeeId} - Code: {employee.shortCode}</p>
-                <div className="flex items-center justify-center gap-2 mt-2">
+                <div className="flex items-center justify-center gap-3 mb-2">
+                  <h2 className="text-2xl font-bold">{employee.name} - {employee.department}</h2>
                   <div
                     className={`px-2 py-1 rounded-full text-xs font-medium ${
                       employee.eligibleForSupport ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
@@ -298,58 +297,65 @@ export default function CafeteriaScanner({ mealCategoryId }: CafeteriaScannerPro
                     {employee.supportStatus}
                   </div>
                 </div>
+                <p className="text-sm text-gray-400">{employee.employeeId} | {employee.shortCode}</p>
               </div>
 
               {pricing && (
-                <div className="w-full max-w-sm">
-                  <Card
-                    className={`border-2 ${pricing.priceType === "supported" ? "border-green-500 bg-green-50" : "border-blue-500 bg-blue-50"}`}
-                  >
-                    <CardContent className="p-4 text-center">
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <DollarSign className="h-5 w-5" />
-                        <span className="font-semibold">
-                          {pricing.priceType === "supported" ? "Supported Price" : "Normal Price"}
-                        </span>
+                <div className="w-full max-w-4xl">
+                  <div className="flex gap-4 justify-center">
+                    {/* Price Section */}
+                    <div className="flex-1 max-w-sm">
+                      <Card
+                        className={`border-2 ${pricing.priceType === "supported" ? "border-green-500 bg-green-50" : "border-blue-500 bg-blue-50"}`}
+                      >
+                        <CardContent className="p-4 text-center">
+                          <div className="flex items-center justify-center gap-2 mb-2">
+                            <DollarSign className="h-5 w-5" />
+                            <span className="font-semibold">
+                              {pricing.priceType === "supported" ? "Supported Price" : "Normal Price"}
+                            </span>
+                          </div>
+                          <div className="text-2xl font-bold mb-2">{pricing.applicablePrice.toFixed(2)} ETB</div>
+                          {pricing.priceType === "supported" && (
+                            <div className="text-sm text-green-600">Subsidy {pricing.supportAmount.toFixed(2)} ETB</div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Order Print Section */}
+                    {success && mealCategory && pricing && mealRecord ? (
+                      <div className="flex-1 max-w-sm">
+                        <Card className="border-2 border-green-500 bg-green-50">
+                          <CardContent className="p-2 text-center">
+                          
+                            <div className="mt-3 p-2 bg-white rounded border">
+                              <p className="text-xs text-gray-600">Order Number</p>
+                              <p className="font-mono font-bold text-lg">{mealRecord.orderNumber}</p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {new Date(mealRecord.timestamp).toLocaleString()}
+                              </p>
+                            </div>
+                            <Button
+                              onClick={handlePrintReceipt}
+                              disabled={printing}
+                              className="mt-3 w-full"
+                              size="sm"
+                            >
+                              <Printer className="h-4 w-4 mr-2" />
+                              {printing ? "Printing..." : "Print Receipt"}
+                            </Button>
+                          </CardContent>
+                        </Card>
                       </div>
-                      <div className="text-2xl font-bold mb-2">{pricing.applicablePrice.toFixed(2)} ETB</div>
-                      {pricing.priceType === "supported" && (
-                        <div className="text-sm text-green-600">Subsidy {pricing.supportAmount.toFixed(2)} ETB</div>
-                      )}
-                    </CardContent>
-                  </Card>
+                    ) : null}
+                  </div>
                 </div>
               )}
 
-              {error ? (
+              {error && (
                 <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-md text-center w-full max-w-sm">{error}</div>
-              ) : success && mealCategory && pricing && mealRecord ? (
-                <div className="mt-4 p-4 bg-green-50 text-green-700 rounded-md text-center w-full max-w-sm">
-                  <p className="font-semibold">{mealCategory.name} access granted!</p>
-                  <p className="text-sm mt-1">
-                    Charged: {pricing.applicablePrice.toFixed(2)} ETB
-                    {pricing.priceType === "supported" && (
-                      <span className="block">Saved: {pricing.supportAmount.toFixed(2)} ETB</span>
-                    )}
-                  </p>
-                  <div className="mt-3 p-2 bg-white rounded border">
-                    <p className="text-xs text-gray-600">Order Number</p>
-                    <p className="font-mono font-bold text-lg">{mealRecord.orderNumber}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {new Date(mealRecord.timestamp).toLocaleString()}
-                    </p>
-                  </div>
-                  <Button
-                    onClick={handlePrintReceipt}
-                    disabled={printing}
-                    className="mt-3 w-full"
-                    size="sm"
-                  >
-                    <Printer className="h-4 w-4 mr-2" />
-                    {printing ? "Printing..." : "Print Receipt"}
-                  </Button>
-                </div>
-              ) : null}
+              )}
             </div>
           ) : (
             <div className="text-center py-8">

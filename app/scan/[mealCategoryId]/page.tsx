@@ -56,13 +56,7 @@ export default function ScanPage({ params }: { params: { mealCategoryId: string 
               </Link>
             </div>
 
-            <div className="mb-8 text-center">
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
-                {mealCategory?.name} Scanning
-              </h1>
-              <p className="mt-2 text-lg text-gray-600">Scan your employee card to access the cafeteria</p>
-            </div>
-
+           
             <Suspense fallback={<div className="text-center">Loading scanner...</div>}>
               <CafeteriaScanner mealCategoryId={params.mealCategoryId} />
             </Suspense>
