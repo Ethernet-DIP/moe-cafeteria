@@ -16,6 +16,19 @@ export interface MealCategory {
   isActive: boolean
 }
 
+export interface MealItem {
+  id: string
+  mealCategoryId: string
+  name: string
+  description?: string
+  imageUrl?: string
+  color: string
+  totalAvailable: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Employee {
   id: string
   employeeId: string

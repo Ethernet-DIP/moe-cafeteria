@@ -14,6 +14,7 @@ import {
   Coffee,
   TrendingUp,
   QrCode,
+  Package,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { logout } from "@/lib/auth-service"
@@ -49,6 +50,11 @@ const navigation = [
     name: "Meal Categories",
     href: "/admin/meal-categories",
     icon: Coffee,
+  },
+  {
+    name: "Meal Items",
+    href: "/admin/meal-items",
+    icon: Package,
   },
   {
     name: "Records",
