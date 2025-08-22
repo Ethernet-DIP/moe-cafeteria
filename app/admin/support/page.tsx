@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { TrendingDown, Users, DollarSign, PieChart, Download, Utensils } from "lucide-react"
-import type { SupportSummary, DepartmentSupportAnalysis } from "@/lib/types"
-import { getSupportSummary, getDepartmentAnalysis, getPaginatedDepartmentAnalysis, type PaginatedDepartmentAnalysis } from "@/lib/support-report-service"
+import type { SupportSummary, DepartmentSupportAnalysis, MealCategoryUsage } from "@/lib/types"
+import { getSupportSummary, getDepartmentAnalysis, getPaginatedDepartmentAnalysis, getMealCategoryUsage, type PaginatedDepartmentAnalysis } from "@/lib/support-report-service"
 import { toast } from "@/hooks/use-toast"
 import Pagination from "@/components/pagination"
 
@@ -16,6 +17,7 @@ export default function SupportReportsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState("monthly")
   const [supportSummary, setSupportSummary] = useState<SupportSummary | null>(null)
   const [departmentAnalysis, setDepartmentAnalysis] = useState<DepartmentSupportAnalysis[]>([])
+  const [categoryUsage, setCategoryUsage] = useState<MealCategoryUsage[]>([])
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0)
@@ -26,12 +28,14 @@ export default function SupportReportsPage() {
   const fetchData = async (period: string, page: number = 0, size: number = 10) => {
     setLoading(true)
     try {
-      const [summary, paginatedAnalysis] = await Promise.all([
+      const [summary, paginatedAnalysis, categories] = await Promise.all([
         getSupportSummary(period),
-        getPaginatedDepartmentAnalysis(period, page, size)
+        getPaginatedDepartmentAnalysis(period, page, size),
+        getMealCategoryUsage(period)
       ])
       setSupportSummary(summary)
       setDepartmentAnalysis(paginatedAnalysis.content)
+      setCategoryUsage(categories)
       setTotalPages(paginatedAnalysis.totalPages)
       setTotalElements(paginatedAnalysis.totalElements)
       setCurrentPage(paginatedAnalysis.currentPage)
@@ -200,6 +204,57 @@ export default function SupportReportsPage() {
               <div className="text-sm font-medium text-muted-foreground">Total Subsidy</div>
               <div className="text-2xl font-bold text-red-600">{formatCurrency(supportSummary.totalSubsidy)}</div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Meal Category Usage */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Meal Category Usage</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Table grouped by meal type */}
+          <div className="space-y-6">
+            {Object.entries(categoryUsage.reduce((acc: Record<string, MealCategoryUsage[]>, item) => {
+              const key = item.mealTypeName || item.mealTypeId || 'Other'
+              if (!acc[key]) acc[key] = []
+              acc[key].push(item)
+              return acc
+            }, {})).map(([mealTypeName, items]) => (
+              <div key={mealTypeName}>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold uppercase text-muted-foreground">{mealTypeName}</h3>
+                  <Badge variant="outline">{items.reduce((s, i) => s + i.totalMeals, 0)} meals</Badge>
+                </div>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Meal Category</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead className="text-right">Supported</TableHead>
+                        <TableHead className="text-right">Normal</TableHead>
+                        <TableHead className="text-right">Revenue</TableHead>
+                        <TableHead className="text-right">Subsidy</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map((cat) => (
+                        <TableRow key={cat.mealCategoryId}>
+                          <TableCell className="font-medium">{cat.mealCategoryName}</TableCell>
+                          <TableCell className="text-right">{cat.totalMeals}</TableCell>
+                          <TableCell className="text-right">{cat.supportedMeals}</TableCell>
+                          <TableCell className="text-right">{cat.normalMeals}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(cat.totalRevenue)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(cat.totalSubsidy)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

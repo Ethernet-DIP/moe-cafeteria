@@ -1,7 +1,7 @@
 "use client"
 
 import { apiClient } from "./axiosInstance"
-import type { SupportSummary, DepartmentSupportAnalysis } from "./types"
+import type { SupportSummary, DepartmentSupportAnalysis, MealCategoryUsage } from "./types"
 
 export const getSupportSummary = async (period: string = "monthly"): Promise<SupportSummary> => {
   try {
@@ -51,5 +51,18 @@ export const getPaginatedDepartmentAnalysis = async (
       throw new Error(error.response.data.message)
     }
     throw new Error("Failed to fetch paginated department analysis")
+  }
+}
+
+export const getMealCategoryUsage = async (period: string = "monthly"): Promise<MealCategoryUsage[]> => {
+  try {
+    const response = await apiClient.get(`/support-reports/category-usage?period=${period}`)
+    return response.data
+  } catch (error: any) {
+    console.error("Error fetching meal category usage:", error)
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message)
+    }
+    throw new Error("Failed to fetch meal category usage")
   }
 } 

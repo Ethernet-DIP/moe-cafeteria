@@ -187,3 +187,15 @@ export interface DepartmentSupportAnalysis {
   avgDepartmentSalary: number
   eligibilityPercentage: number
 }
+
+export interface MealCategoryUsage {
+  mealCategoryId: string
+  mealCategoryName: string
+  mealTypeId: string
+  mealTypeName: string
+  totalMeals: number
+  supportedMeals: number
+  normalMeals: number
+  totalRevenue: number
+  totalSubsidy: number
+}
