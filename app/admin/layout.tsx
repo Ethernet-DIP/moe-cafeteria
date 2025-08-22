@@ -18,14 +18,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <AdminSidebar />
           <div className="flex-1 min-w-0 overflow-auto">
             <div className="w-full p-4 md:p-8">
-              <div className="mb-4">
-                <Link href="/">
-                  <Button variant="ghost" size="sm" className="gap-1">
-                    <ArrowLeft className="h-4 w-4" />
-                    Back to Scanner
-                  </Button>
-                </Link>
-              </div>
               <div className="w-full">
                 {children}
               </div>

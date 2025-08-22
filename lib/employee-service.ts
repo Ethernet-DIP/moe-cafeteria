@@ -79,6 +79,53 @@ export const recordMeal = async (cardId: string, mealCategoryId: string): Promis
   }
 }
 
+// Record a meal for an employee with selected items
+export const recordMealWithItems = async (
+  cardId: string, 
+  mealCategoryId: string, 
+  selectedItems: Array<{ mealItemId: string; quantity: number }>
+): Promise<MealRecord> => {
+  try {
+    const response = await apiClient.post("/meal-records/record-with-items", {
+      cardId,
+      mealCategoryId,
+      selectedItems
+    })
+    return response.data
+  } catch (error: any) {
+    console.error("Error recording meal with items:", error)
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message)
+    }
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error)
+    }
+    throw new Error("Failed to record meal with items")
+  }
+}
+
+// Attach selected items to an existing meal record
+export const saveItemsForMealRecord = async (
+  mealRecordId: string,
+  selectedItems: Array<{ mealItemId: string; quantity: number }>
+): Promise<MealRecord> => {
+  try {
+    const response = await apiClient.post(`/meal-records/${mealRecordId}/items`, {
+      selectedItems
+    })
+    return response.data
+  } catch (error: any) {
+    console.error("Error saving items for record:", error)
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message)
+    }
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error)
+    }
+    throw new Error("Failed to save items for record")
+  }
+}
+
 // Get all employees
 export const getAllEmployees = async (): Promise<Employee[]> => {
   try {

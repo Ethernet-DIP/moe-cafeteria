@@ -6,6 +6,7 @@ import ProtectedRoute from "@/components/protected-route"
 import { useRouter } from "next/navigation"
 import type { MealCategory } from "@/lib/types"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 
@@ -20,7 +21,6 @@ export default function Home() {
   return (
     <ProtectedRoute requiredRole="operator">
       <main className="min-h-screen bg-gray-50 p-4 md:p-8">
-        <div className="mx-auto max-w-4xl">
           <div className="mb-4">
             <Link href="/admin">
               <Button variant="ghost" size="sm" className="gap-1">
@@ -29,6 +29,28 @@ export default function Home() {
               </Button>
             </Link>
           </div>
+        
+        <div className="flex gap-8 items-start">
+          {/* Left Section - MOE Logo */}
+          <div className="w-1/2 flex-shrink-0">
+            <div className="sticky top-8">
+              <div className="text-center flex flex-col items-center justify-center min-h-[400px]">
+                <div className="relative w-full h-48 mb-4">
+                  <Image
+                    src="/images/ministry-logo.png"
+                    alt="Ministry of Education Logo"
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-800">MoE Cafeteria</h2>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Section - Main Content */}
+          <div className="w-1/2 flex-shrink-0">
           <div className="mb-8 text-center">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">Cafeteria Access System</h1>
             <p className="mt-2 text-lg text-gray-600">Select a meal type to begin scanning</p>
@@ -36,6 +58,8 @@ export default function Home() {
 
           <MealSelector onMealSelect={handleMealSelect} />
         </div>
+        </div>
+        
         <Toaster />
       </main>
     </ProtectedRoute>

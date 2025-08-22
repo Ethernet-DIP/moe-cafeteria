@@ -302,11 +302,7 @@ function ScanPageContent() {
               Back to Meal Selection
             </Button>
           </Link>
-          <Link href="/admin">
-            <Button variant="outline" size="sm" className="gap-1">
-              Admin Dashboard
-            </Button>
-          </Link>
+
         </div>
 
         <div className="flex gap-6 h-[calc(100vh-140px)]">

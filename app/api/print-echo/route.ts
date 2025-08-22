@@ -37,9 +37,7 @@ export async function POST(request: NextRequest) {
       
       // Send the file to the printer with UTF-8 encoding
       const command = `lp -d ${printer} -o media=Custom.80x200mm -o fit-to-page ${tempFile}`
-      
-      console.log('Executing print command:', command)
-      
+     
       // Execute the command
       const { stdout, stderr } = await execAsync(command)
       
@@ -47,7 +45,6 @@ export async function POST(request: NextRequest) {
         console.error('Print stderr:', stderr)
       }
       
-      console.log('Print stdout:', stdout)
       
       return NextResponse.json({
         message: 'Receipt printed successfully via file command',

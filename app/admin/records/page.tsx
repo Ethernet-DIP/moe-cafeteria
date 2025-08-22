@@ -355,6 +355,7 @@ export default function MealRecordsPage() {
                       <TableHead>Name</TableHead>
                       <TableHead>Meal Type</TableHead>
                       <TableHead>Category</TableHead>
+                      <TableHead>Meal Items</TableHead>
                       <TableHead>Price Paid</TableHead>
                       <TableHead>Subsidy</TableHead>
                       <TableHead>Time</TableHead>
@@ -365,7 +366,7 @@ export default function MealRecordsPage() {
                   <TableBody>
                     {paginatedRecords.length === 0 ? (
                       <TableRow suppressHydrationWarning>
-                        <TableCell colSpan={9} className="text-center py-8">
+                        <TableCell colSpan={10} className="text-center py-8">
                           {filteredAndSortedRecords.length === 0 ? "No meal records found" : "No records on this page"}
                         </TableCell>
                       </TableRow>
@@ -392,6 +393,19 @@ export default function MealRecordsPage() {
                               >
                                 {record.category === "fasting" ? "Fasting" : "Non-Fasting"}
                               </span>
+                            </TableCell>
+                            <TableCell>
+                              {record.mealItems && record.mealItems.length > 0 ? (
+                                <div className="space-y-1">
+                                  {record.mealItems.map((item, index) => (
+                                    <div key={index} className="text-xs text-gray-600">
+                                      {item.mealItemName} x{item.quantity}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-400">No items</span>
+                              )}
                             </TableCell>
                             <TableCell className="font-mono">
                               {record.actualPrice.toFixed(2)} ETB

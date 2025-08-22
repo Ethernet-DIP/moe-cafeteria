@@ -73,7 +73,6 @@ export const getReceiptText = async (mealRecordId: string, format: 'simple' | 'd
     return response.data
   } catch (error: any) {
     console.error("Error getting receipt text from backend:", error)
-    console.log("Falling back to local receipt generation")
     
     // Fallback: Generate receipt locally using stored meal record data
     // This will be called from the cafeteria scanner with the meal record data
@@ -213,8 +212,7 @@ export const printReceiptQZTray = async (receiptText: string, orderNumber: strin
 
     // Print
     await qz.print(config, printData)
-    console.log("Receipt printed successfully!")
-    
+  
   } catch (error) {
     console.error("Print error:", error)
     throw new Error(`Failed to print receipt: ${error}`)
@@ -224,9 +222,7 @@ export const printReceiptQZTray = async (receiptText: string, orderNumber: strin
 // Print receipt using echo command (no popups)
 export const printReceiptEcho = async (receiptText: string, orderNumber: string, printerName: string = 'POS-80') => {
   try {
-    console.log("Attempting echo print for order:", orderNumber)
-    console.log("Printer:", printerName)
-    
+  
     // Use the new API route that handles echo command execution
     const response = await fetch('/api/print-echo', {
       method: 'POST',

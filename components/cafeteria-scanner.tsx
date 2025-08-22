@@ -10,7 +10,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { AlertCircle, CheckCircle, Utensils, Coffee, Moon, Leaf, UtensilsCrossed, DollarSign, Printer } from "lucide-react"
 import Image from "next/image"
 import type { Employee, MealCategory, MealRecord, MealType } from "@/lib/types"
-import { getEmployeeByCardId, recordMeal, hasUsedMeal, getMealPricing } from "@/lib/employee-service"
+import { getEmployeeByCardId, recordMeal, recordMealWithItems, hasUsedMeal, getMealPricing } from "@/lib/employee-service"
 import { getMealCategoryById, getMealTypeById } from "@/lib/meal-service"
 import { printReceiptWithFallback, generateReceiptTextLocally } from "@/lib/print-service"
 
@@ -155,7 +155,20 @@ export default function CafeteriaScanner({ mealCategoryId, selectedItems = [] }:
         setError(`${emp.name} has already used their ${mealCategory.name} allowance today.`)
       } else {
         try {
-          const recordedMeal = await recordMeal(emp.cardId, mealCategoryId)
+          let recordedMeal: MealRecord
+          
+          // If items are selected, record meal with items
+          if (selectedItems && selectedItems.length > 0) {
+            const selectedItemsData = selectedItems.map(item => ({
+              mealItemId: item.item.id,
+              quantity: item.quantity
+            }))
+            recordedMeal = await recordMealWithItems(emp.cardId, mealCategoryId, selectedItemsData)
+          } else {
+            // Record meal without items (fallback)
+            recordedMeal = await recordMeal(emp.cardId, mealCategoryId)
+          }
+          
           setMealRecord(recordedMeal)
           setSuccess(true)
         } catch (mealError: any) {
@@ -214,25 +227,35 @@ export default function CafeteriaScanner({ mealCategoryId, selectedItems = [] }:
     if (!mealRecord) return
     
     setPrinting(true)
-    try {
-      // Generate receipt locally with employee data
-      console.log("Generating receipt locally for order:", mealRecord.orderNumber)
-      const receiptData = generateReceiptTextLocally(mealRecord, employee, mealCategory, mealType, 'simple', selectedItems)
-      
-      // Try echo command first, then fallback to browser print
-      try {
-        const { printReceiptEcho } = await import('@/lib/print-service')
-        await printReceiptEcho(receiptData.receiptText, receiptData.orderNumber)
-      } catch (echoError) {
-        console.log("Echo command failed, using browser print:", echoError)
-        const { printReceipt } = await import('@/lib/print-service')
-        printReceipt(receiptData.receiptText, receiptData.orderNumber)
-      }
-      
-      toast({
-        title: "Receipt Printed",
-        description: `Order ${mealRecord.orderNumber} has been printed successfully.`,
-      })
+          try {
+        // First, persist selected items to this meal record (if any)
+        if (mealRecord && selectedItems && selectedItems.length > 0) {
+          const selectedItemsData = selectedItems.map(item => ({
+            mealItemId: item.item.id,
+            quantity: item.quantity
+          }))
+          const { saveItemsForMealRecord } = await import('@/lib/employee-service')
+          await saveItemsForMealRecord(mealRecord.id, selectedItemsData)
+        }
+        
+        // Generate receipt locally with employee data
+        console.log("Generating receipt locally for order:", mealRecord.orderNumber)
+        const receiptData = generateReceiptTextLocally(mealRecord, employee, mealCategory, mealType, 'simple', selectedItems)
+        
+        // Try echo command first, then fallback to browser print
+        try {
+          const { printReceiptEcho } = await import('@/lib/print-service')
+          await printReceiptEcho(receiptData.receiptText, receiptData.orderNumber)
+        } catch (echoError) {
+          console.log("Echo command failed, using browser print:", echoError)
+          const { printReceipt } = await import('@/lib/print-service')
+          printReceipt(receiptData.receiptText, receiptData.orderNumber)
+        }
+        
+        toast({
+          title: "Receipt Printed",
+          description: `Order ${mealRecord.orderNumber} has been printed successfully.`,
+        })
     } catch (error: any) {
       toast({
         title: "Print Error",

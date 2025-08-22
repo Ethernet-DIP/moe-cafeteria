@@ -24,7 +24,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Edit, Trash2, Package } from "lucide-react"
+import { Plus, Pencil, Trash2, AlertTriangle, CheckCircle, XCircle, Filter } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import type { MealItem, MealCategory } from "@/lib/types"
 import { 
@@ -42,6 +42,7 @@ export default function MealItemsPage() {
   const [mealCategories, setMealCategories] = useState<MealCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
+  const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<MealItem | null>(null)
   const { toast } = useToast()
@@ -188,10 +189,13 @@ export default function MealItemsPage() {
     })
   }
 
-  const filteredItems = mealItems.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredItems = mealItems.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+    const matchesCategory = categoryFilter === "all" || item.mealCategoryId === categoryFilter
+    
+    return matchesSearch && matchesCategory
+  })
 
   const getCategoryName = (categoryId: string) => {
     return mealCategories.find(cat => cat.id === categoryId)?.name || "Unknown"
@@ -211,15 +215,140 @@ export default function MealItemsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Meal Items</h1>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Meal Item
+
+      <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Manage Meal Items</CardTitle>
+          <div className="flex items-center space-x-2">
+            <Input
+              placeholder="Search meal items..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-sm"
+            />
+            <Button onClick={() => setIsCreateDialogOpen(true)} size="sm" className="flex items-center gap-1">
+              <Plus className="h-4 w-4" />
+              Add Item
             </Button>
-          </DialogTrigger>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Filters */}
+          <div className="flex gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Filters:</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Category:</label>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-40 h-8">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {mealCategories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
+              <span className="text-sm text-gray-600">
+                Showing {filteredItems.length} of {mealItems.length} items
+              </span>
+            </div>
+          </div>
+          
+          {loading ? (
+            <div className="text-center py-8">Loading meal items...</div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Color</TableHead>
+                    <TableHead>Available</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredItems.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center">
+                        {mealItems.length === 0 ? "No meal items found" : "No items match the search criteria"}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredItems.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell>{getCategoryName(item.mealCategoryId)}</TableCell>
+                        <TableCell className="max-w-xs truncate">
+                          {item.description || "No description"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <div
+                              className="w-4 h-4 rounded border"
+                              style={{ backgroundColor: item.color }}
+                            />
+                            <span className="text-xs">{item.color}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={item.totalAvailable}
+                            onChange={(e) => handleAvailabilityChange(item.id, parseInt(e.target.value) || 0)}
+                            className="w-20"
+                            min="0"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Switch checked={item.isActive} onCheckedChange={() => handleToggleActive(item.id)} />
+                            <span className="flex items-center">
+                              {item.isActive ? (
+                                <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-red-500 mr-1" />
+                              )}
+                              {item.isActive ? "Enabled" : "Disabled"}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Button variant="outline" size="sm" onClick={() => openEditDialog(item)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleDelete(item.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Create Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Add New Meal Item</DialogTitle>
@@ -303,78 +432,9 @@ export default function MealItemsPage() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>All Meal Items</CardTitle>
-          <div className="flex items-center space-x-2">
-            <Input
-              placeholder="Search meal items..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Color</TableHead>
-                <TableHead>Available</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell>{getCategoryName(item.mealCategoryId)}</TableCell>
-                  <TableCell className="max-w-xs truncate">
-                    {item.description || "No description"}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <div
-                        className="w-4 h-4 rounded border"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="text-xs">{item.color}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      value={item.totalAvailable}
-                      onChange={(e) => handleAvailabilityChange(item.id, parseInt(e.target.value) || 0)}
-                      className="w-20"
-                      min="0"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={item.isActive}
-                        onCheckedChange={() => handleToggleActive(item.id)}
-                      />
-                      <Badge variant={item.isActive ? "default" : "secondary"}>
-                        {item.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm" onClick={() => openEditDialog(item)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
+      {/* Edit Dialog */}
+      <Dialog open={!!editingItem} onOpenChange={() => setEditingItem(null)}>
                         <DialogContent className="sm:max-w-[425px]">
                           <DialogHeader>
                             <DialogTitle>Edit Meal Item</DialogTitle>
@@ -455,21 +515,6 @@ export default function MealItemsPage() {
                           </div>
                         </DialogContent>
                       </Dialog>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
     </div>
   )
 } 

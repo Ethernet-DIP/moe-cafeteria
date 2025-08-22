@@ -57,6 +57,17 @@ export interface Employee {
   supportStatus?: string
 }
 
+export interface MealRecordItem {
+  id: string
+  mealRecordId: string
+  mealItemId: string
+  mealItemName: string
+  quantity: number
+  pricePerItem: number
+  totalPrice: number
+  createdAt: string
+}
+
 export interface MealRecord {
   id: string
   employeeId: string
@@ -78,6 +89,8 @@ export interface MealRecord {
   recordedByUserId?: string
   recordedByUsername?: string
   recordedByFullName?: string
+  // Meal items information
+  mealItems?: MealRecordItem[]
 }
 
 export interface EmployeeUsageStats {
