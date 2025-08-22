@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -24,9 +25,10 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Pencil, Trash2, AlertTriangle, CheckCircle, XCircle, Filter } from "lucide-react"
+import { Plus, Pencil, Trash2, AlertTriangle, CheckCircle, XCircle, Filter, Package } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import type { MealItem, MealCategory } from "@/lib/types"
+import { getImageUrl } from "@/lib/utils"
 import { 
   getMealItems, 
   createMealItem, 
@@ -57,6 +59,7 @@ export default function MealItemsPage() {
     totalAvailable: 0,
     isActive: true,
   })
+  const [file, setFile] = useState<File | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -83,7 +86,7 @@ export default function MealItemsPage() {
 
   const handleCreate = async () => {
     try {
-      await createMealItem(formData)
+      await createMealItem({ ...formData, file: file ?? undefined })
       toast({
         title: "Success",
         description: "Meal item created successfully",
@@ -103,7 +106,7 @@ export default function MealItemsPage() {
   const handleUpdate = async () => {
     if (!editingItem) return
     try {
-      await updateMealItem(editingItem.id, formData)
+      await updateMealItem(editingItem.id, { ...formData, file: file ?? undefined })
       toast({
         title: "Success",
         description: "Meal item updated successfully",
@@ -174,6 +177,7 @@ export default function MealItemsPage() {
       totalAvailable: 0,
       isActive: true,
     })
+    setFile(null)
   }
 
   const openEditDialog = (item: MealItem) => {
@@ -187,6 +191,7 @@ export default function MealItemsPage() {
       totalAvailable: item.totalAvailable,
       isActive: item.isActive,
     })
+    setFile(null)
   }
 
   const filteredItems = mealItems.filter(item => {
@@ -272,6 +277,7 @@ export default function MealItemsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Image</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Description</TableHead>
@@ -284,13 +290,30 @@ export default function MealItemsPage() {
                 <TableBody>
                   {filteredItems.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center">
+                      <TableCell colSpan={8} className="text-center">
                         {mealItems.length === 0 ? "No meal items found" : "No items match the search criteria"}
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredItems.map((item) => (
                       <TableRow key={item.id}>
+                        <TableCell>
+                          {getImageUrl(item.imageUrl) ? (
+                            <div className="w-12 h-12 relative rounded overflow-hidden">
+                              <Image
+                                src={getImageUrl(item.imageUrl)!}
+                                alt={item.name}
+                                fill
+                                className="object-cover"
+                                sizes="48px"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                              <Package className="h-6 w-6 text-gray-400" />
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="font-medium">{item.name}</TableCell>
                         <TableCell>{getCategoryName(item.mealCategoryId)}</TableCell>
                         <TableCell className="max-w-xs truncate">
@@ -388,13 +411,16 @@ export default function MealItemsPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="imageUrl">Image URL</Label>
+                <Label htmlFor="file">Image</Label>
                 <Input
-                  id="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
+                  id="file"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
                 />
+                {file && (
+                  <p className="text-sm text-muted-foreground">Selected: {file.name}</p>
+                )}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="color">Color</Label>
@@ -472,12 +498,36 @@ export default function MealItemsPage() {
                               </Select>
                             </div>
                             <div className="grid gap-2">
-                              <Label htmlFor="edit-imageUrl">Image URL</Label>
+                              <Label htmlFor="edit-file">Image</Label>
                               <Input
-                                id="edit-imageUrl"
-                                value={formData.imageUrl}
-                                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                                id="edit-file"
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setFile(e.target.files?.[0] || null)}
                               />
+                              {file && (
+                                <p className="text-sm text-muted-foreground">Selected: {file.name}</p>
+                              )}
+                              {formData.imageUrl && !file && (
+                                <div className="space-y-2">
+                                  <p className="text-sm text-muted-foreground">Current image:</p>
+                                  <div className="w-20 h-20 relative rounded overflow-hidden border">
+                                    {getImageUrl(formData.imageUrl) ? (
+                                      <Image
+                                        src={getImageUrl(formData.imageUrl)!}
+                                        alt="Current image"
+                                        fill
+                                        className="object-cover"
+                                        sizes="80px"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                                        <Package className="h-6 w-6 text-gray-400" />
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                             <div className="grid gap-2">
                               <Label htmlFor="edit-color">Color</Label>

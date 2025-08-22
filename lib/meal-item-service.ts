@@ -48,9 +48,17 @@ export const getMealItemById = async (id: string): Promise<MealItem> => {
 }
 
 // Create meal item
-export const createMealItem = async (mealItem: Omit<MealItem, "id" | "createdAt" | "updatedAt">): Promise<MealItem> => {
+export const createMealItem = async (mealItem: Omit<MealItem, "id" | "createdAt" | "updatedAt"> & { file?: File }): Promise<MealItem> => {
   try {
-    const response = await apiClient.post("/meal-items", mealItem)
+    const form = new FormData()
+    form.append('name', mealItem.name)
+    if (mealItem.description) form.append('description', mealItem.description)
+    form.append('mealCategoryId', mealItem.mealCategoryId)
+    if (mealItem.color) form.append('color', mealItem.color)
+    form.append('totalAvailable', String(mealItem.totalAvailable ?? 0))
+    form.append('isActive', String(mealItem.isActive ?? true))
+    if ((mealItem as any).file) form.append('file', (mealItem as any).file as File)
+    const response = await apiClient.post("/meal-items", form, { headers: { 'Content-Type': 'multipart/form-data' } })
     return response.data
   } catch (error) {
     console.error("Error creating meal item:", error)
@@ -59,9 +67,17 @@ export const createMealItem = async (mealItem: Omit<MealItem, "id" | "createdAt"
 }
 
 // Update meal item
-export const updateMealItem = async (id: string, updates: Partial<MealItem>): Promise<MealItem> => {
+export const updateMealItem = async (id: string, updates: Partial<MealItem> & { file?: File }): Promise<MealItem> => {
   try {
-    const response = await apiClient.put(`/meal-items/${id}`, updates)
+    const form = new FormData()
+    if (updates.name) form.append('name', updates.name)
+    if (updates.description) form.append('description', updates.description)
+    if (updates.mealCategoryId) form.append('mealCategoryId', updates.mealCategoryId)
+    if (updates.color) form.append('color', updates.color)
+    if (typeof updates.totalAvailable === 'number') form.append('totalAvailable', String(updates.totalAvailable))
+    if (typeof updates.isActive === 'boolean') form.append('isActive', String(updates.isActive))
+    if ((updates as any).file) form.append('file', (updates as any).file as File)
+    const response = await apiClient.put(`/meal-items/${id}`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
     return response.data
   } catch (error) {
     console.error("Error updating meal item:", error)

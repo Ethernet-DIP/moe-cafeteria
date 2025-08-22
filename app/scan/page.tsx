@@ -15,6 +15,7 @@ import { Package } from "lucide-react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { getImageUrl } from "@/lib/utils"
 
 function ScanPageContent() {
   const searchParams = useSearchParams()
@@ -386,9 +387,9 @@ function ScanPageContent() {
                                   >
                                     {/* Item Image */}
                                     <div className="relative w-full h-12 mb-1 rounded overflow-hidden bg-gray-100">
-                                      {item.imageUrl ? (
+                                      {getImageUrl(item.imageUrl) ? (
                                         <Image
-                                          src={item.imageUrl}
+                                          src={getImageUrl(item.imageUrl)!}
                                           alt={item.name}
                                           fill
                                           className="object-cover"
