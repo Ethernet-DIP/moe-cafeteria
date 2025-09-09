@@ -58,7 +58,11 @@ export const createMealItem = async (mealItem: Omit<MealItem, "id" | "createdAt"
     form.append('totalAvailable', String(mealItem.totalAvailable ?? 0))
     form.append('isActive', String(mealItem.isActive ?? true))
     if ((mealItem as any).file) form.append('file', (mealItem as any).file as File)
-    const response = await apiClient.post("/meal-items", form, { headers: { 'Content-Type': 'multipart/form-data' } })
+    const response = await apiClient.post("/meal-items", form, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
     return response.data
   } catch (error) {
     console.error("Error creating meal item:", error)
@@ -77,7 +81,11 @@ export const updateMealItem = async (id: string, updates: Partial<MealItem> & { 
     if (typeof updates.totalAvailable === 'number') form.append('totalAvailable', String(updates.totalAvailable))
     if (typeof updates.isActive === 'boolean') form.append('isActive', String(updates.isActive))
     if ((updates as any).file) form.append('file', (updates as any).file as File)
-    const response = await apiClient.put(`/meal-items/${id}`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
+    const response = await apiClient.put(`/meal-items/${id}`, form, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
     return response.data
   } catch (error) {
     console.error("Error updating meal item:", error)

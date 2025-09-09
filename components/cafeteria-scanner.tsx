@@ -153,28 +153,11 @@ export default function CafeteriaScanner({ mealCategoryId, selectedItems = [] }:
 
       if (alreadyUsed) {
         setError(`${emp.name} has already used their ${mealCategory.name} allowance today.`)
+        setSuccess(false) // Don't show success state when there's an error
       } else {
-        try {
-          let recordedMeal: MealRecord
-          
-          // If items are selected, record meal with items
-          if (selectedItems && selectedItems.length > 0) {
-            const selectedItemsData = selectedItems.map(item => ({
-              mealItemId: item.item.id,
-              quantity: item.quantity
-            }))
-            recordedMeal = await recordMealWithItems(emp.cardId, mealCategoryId, selectedItemsData)
-          } else {
-            // Record meal without items (fallback)
-            recordedMeal = await recordMeal(emp.cardId, mealCategoryId)
-          }
-          
-          setMealRecord(recordedMeal)
-          setSuccess(true)
-        } catch (mealError: any) {
-          // Handle meal recording specific errors
-          setError(mealError.message || "Failed to record meal")
-        }
+        // Employee is eligible - show the employee info and pricing
+        // The meal will be recorded when "Print Receipt" is clicked
+        setSuccess(true)
       }
     } catch (err: any) {
       // Handle employee lookup and other errors
@@ -183,6 +166,7 @@ export default function CafeteriaScanner({ mealCategoryId, selectedItems = [] }:
       } else {
         setError("Employee not found with this card or code.")
       }
+      setSuccess(false) // Don't show success state when there's an error
     } finally {
       setProcessing(false)
       setInputValue("")
@@ -224,38 +208,59 @@ export default function CafeteriaScanner({ mealCategoryId, selectedItems = [] }:
     e.preventDefault()
     e.stopPropagation()
     
-    if (!mealRecord) return
+    if (!employee || !mealCategory) return
     
     setPrinting(true)
-          try {
-        // First, persist selected items to this meal record (if any)
-        if (mealRecord && selectedItems && selectedItems.length > 0) {
-          const selectedItemsData = selectedItems.map(item => ({
-            mealItemId: item.item.id,
-            quantity: item.quantity
-          }))
-          const { saveItemsForMealRecord } = await import('@/lib/employee-service')
-          await saveItemsForMealRecord(mealRecord.id, selectedItemsData)
-        }
-        
-        // Generate receipt locally with employee data
-        console.log("Generating receipt locally for order:", mealRecord.orderNumber)
-        const receiptData = generateReceiptTextLocally(mealRecord, employee, mealCategory, mealType, 'simple', selectedItems)
-        
-        // Try echo command first, then fallback to browser print
-        try {
-          const { printReceiptEcho } = await import('@/lib/print-service')
-          await printReceiptEcho(receiptData.receiptText, receiptData.orderNumber)
-        } catch (echoError) {
-          console.log("Echo command failed, using browser print:", echoError)
-          const { printReceipt } = await import('@/lib/print-service')
-          printReceipt(receiptData.receiptText, receiptData.orderNumber)
-        }
-        
-        toast({
-          title: "Receipt Printed",
-          description: `Order ${mealRecord.orderNumber} has been printed successfully.`,
-        })
+    try {
+      // Record the meal (meal usage was already checked during search)
+      let recordedMeal: MealRecord
+      
+      // If items are selected, record meal with items
+      if (selectedItems && selectedItems.length > 0) {
+        const selectedItemsData = selectedItems.map(item => ({
+          mealItemId: item.item.id,
+          quantity: item.quantity
+        }))
+        recordedMeal = await recordMealWithItems(employee.cardId, mealCategoryId, selectedItemsData)
+      } else {
+        // Record meal without items (fallback)
+        recordedMeal = await recordMeal(employee.cardId, mealCategoryId)
+      }
+      
+      setMealRecord(recordedMeal)
+      
+      // Generate receipt locally with employee data
+      console.log("Generating receipt locally for order:", recordedMeal.orderNumber)
+      const receiptData = generateReceiptTextLocally(recordedMeal, employee, mealCategory, mealType, 'simple', selectedItems)
+      
+      // Try echo command first, then fallback to browser print
+      try {
+        const { printReceiptEcho } = await import('@/lib/print-service')
+        await printReceiptEcho(receiptData.receiptText, receiptData.orderNumber)
+      } catch (echoError) {
+        console.log("Echo command failed, using browser print:", echoError)
+        const { printReceipt } = await import('@/lib/print-service')
+        printReceipt(receiptData.receiptText, receiptData.orderNumber)
+      }
+      
+      toast({
+        title: "Receipt Printed",
+        description: `Order ${recordedMeal.orderNumber} has been printed successfully.`,
+      })
+      
+      // Clear the display and reset state after successful printing
+      setEmployee(null)
+      setPricing(null)
+      setError(null)
+      setSuccess(false)
+      setMealRecord(null)
+      setInputValue("")
+      
+      // Focus the input field after clearing
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 100)
+      
     } catch (error: any) {
       toast({
         title: "Print Error",
@@ -264,11 +269,6 @@ export default function CafeteriaScanner({ mealCategoryId, selectedItems = [] }:
       })
     } finally {
       setPrinting(false)
-      
-      // Re-focus the input field after printing
-      setTimeout(() => {
-        inputRef.current?.focus()
-      }, 100)
     }
   }
 
@@ -319,13 +319,14 @@ export default function CafeteriaScanner({ mealCategoryId, selectedItems = [] }:
                   fill
                   className="object-cover"
                 />
-                {(error || success) && (
+                {error && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
-                    {error ? (
-                      <AlertCircle className="h-16 w-16 text-red-500" />
-                    ) : (
-                      <CheckCircle className="h-16 w-16 text-green-500" />
-                    )}
+                    <AlertCircle className="h-16 w-16 text-orange-500" />
+                  </div>
+                )}
+                {success && !error && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
+                    <CheckCircle className="h-16 w-16 text-green-500" />
                   </div>
                 )}
               </div>
@@ -368,17 +369,29 @@ export default function CafeteriaScanner({ mealCategoryId, selectedItems = [] }:
                     </div>
 
                     {/* Order Print Section */}
-                    {success && mealCategory && pricing && mealRecord ? (
+                    {success && !error && mealCategory && pricing ? (
                       <div className="flex-1 max-w-sm">
                         <Card className="border-2 border-green-500 bg-green-50">
                           <CardContent className="p-2 text-center">
                           
                             <div className="mt-3 p-2 bg-white rounded border">
-                              <p className="text-xs text-gray-600">Order Number</p>
-                              <p className="font-mono font-bold text-lg">{mealRecord.orderNumber}</p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                {new Date(mealRecord.timestamp).toLocaleString()}
-                              </p>
+                              {mealRecord ? (
+                                <>
+                                  <p className="text-xs text-gray-600">Order Number</p>
+                                  <p className="font-mono font-bold text-lg">{mealRecord.orderNumber}</p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {new Date(mealRecord.timestamp).toLocaleString()}
+                                  </p>
+                                </>
+                              ) : (
+                                <>
+                                  <p className="text-xs text-gray-600">Ready to Print</p>
+                                  <p className="font-mono font-bold text-lg">---</p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Click Print to record meal
+                                  </p>
+                                </>
+                              )}
                               
                               {/* Selected Items Display */}
                               {selectedItems && selectedItems.length > 0 && (
@@ -403,12 +416,12 @@ export default function CafeteriaScanner({ mealCategoryId, selectedItems = [] }:
                             </div>
                             <Button
                               onClick={handlePrintReceipt}
-                              disabled={printing}
+                              disabled={printing || !!error}
                               className="mt-3 w-full"
                               size="sm"
                             >
                               <Printer className="h-4 w-4 mr-2" />
-                              {printing ? "Printing..." : "Print Receipt"}
+                              {printing ? "Printing..." : error ? "Cannot Print" : "Print Receipt"}
                             </Button>
                           </CardContent>
                         </Card>
@@ -419,7 +432,7 @@ export default function CafeteriaScanner({ mealCategoryId, selectedItems = [] }:
               )}
 
               {error && (
-                <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-md text-center w-full max-w-sm">{error}</div>
+                <div className="mt-4 p-3 bg-orange-50 text-orange-700 rounded-md text-center w-full max-w-sm border border-orange-200">{error}</div>
               )}
             </div>
           ) : (

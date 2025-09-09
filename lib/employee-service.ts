@@ -52,7 +52,7 @@ export const hasUsedMeal = async (cardId: string, mealTypeId: string): Promise<b
     const response = await apiClient.get(`/meal-records/check-duplicate`, {
       params: { cardId, mealTypeId }
     })
-    return response.data.hasUsed
+    return response.data.hasUsedToday
   } catch (error) {
     console.error("Error checking meal usage:", error)
     return false
