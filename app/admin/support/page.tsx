@@ -6,7 +6,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { TrendingDown, Users, DollarSign, PieChart, Download, Utensils } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { TrendingDown, Users, DollarSign, PieChart, Download, Utensils, FileSpreadsheet } from "lucide-react"
 import type { SupportSummary, DepartmentSupportAnalysis, MealCategoryUsage } from "@/lib/types"
 import { getSupportSummary, getDepartmentAnalysis, getPaginatedDepartmentAnalysis, getMealCategoryUsage, type PaginatedDepartmentAnalysis } from "@/lib/support-report-service"
 import { toast } from "@/hooks/use-toast"
@@ -18,6 +20,11 @@ export default function SupportReportsPage() {
   const [supportSummary, setSupportSummary] = useState<SupportSummary | null>(null)
   const [departmentAnalysis, setDepartmentAnalysis] = useState<DepartmentSupportAnalysis[]>([])
   const [categoryUsage, setCategoryUsage] = useState<MealCategoryUsage[]>([])
+  
+  // Date selection state
+  const [startDate, setStartDate] = useState("")
+  const [endDate, setEndDate] = useState("")
+  const [exportLoading, setExportLoading] = useState(false)
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0)
@@ -79,6 +86,52 @@ export default function SupportReportsPage() {
     return `${value.toFixed(1)}%`
   }
 
+  const handleExportToExcel = async () => {
+    if (!startDate || !endDate) {
+      toast({
+        title: "Error",
+        description: "Please select both start and end dates for export.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setExportLoading(true)
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
+      const response = await fetch(`${apiUrl}/support-reports/export/excel?startDate=${startDate}&endDate=${endDate}`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to export Excel file')
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.style.display = 'none'
+      a.href = url
+      a.download = `support_report_${startDate}_to_${endDate}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast({
+        title: "Success",
+        description: "Excel file exported successfully!",
+      })
+    } catch (error) {
+      console.error("Error exporting Excel:", error)
+      toast({
+        title: "Error",
+        description: "Failed to export Excel file. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setExportLoading(false)
+    }
+  }
+
   if (loading || !supportSummary) {
     return (
       <div className="space-y-6">
@@ -129,6 +182,57 @@ export default function SupportReportsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Date Selection and Export Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileSpreadsheet className="h-5 w-5" />
+            Excel Export
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-end gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Start Date</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-40"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="endDate">End Date</Label>
+              <Input
+                id="endDate"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-40"
+              />
+            </div>
+            <Button 
+              onClick={handleExportToExcel}
+              disabled={exportLoading || !startDate || !endDate}
+              className="flex items-center gap-2"
+            >
+              {exportLoading ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Export to Excel
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
